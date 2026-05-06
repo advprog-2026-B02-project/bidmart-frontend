@@ -23,8 +23,7 @@ export default function RegisterPage() {
 
         try {
             await register(email, password, displayName);
-            setIsSuccess(true);
-            setMsg("Registrasi berhasil! Silakan cek email Anda untuk verifikasi.");
+            router.push(`/verify?email=${encodeURIComponent(email)}`);
         } catch (err: unknown) {
             const message =
                 err instanceof Error ? err.message : "Gagal mendaftarkan akun.";

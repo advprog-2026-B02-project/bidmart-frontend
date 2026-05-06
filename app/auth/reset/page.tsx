@@ -1,10 +1,10 @@
 "use client";
 
-import {useState, useEffect, Suspense} from "react";
+import {useState, Suspense} from "react";
 import {useSearchParams, useRouter} from "next/navigation";
 import AuthShell from "@/components/AuthShell";
 import {buttonCls, inputCls} from "@/components/ui";
-import {resetPassword, validateResetToken} from "@/lib/api";
+import {resetPassword} from "@/lib/api";
 
 function ResetContent() {
     const searchParams = useSearchParams();
@@ -19,41 +19,9 @@ function ResetContent() {
     const [msg, setMsg] = useState<string | null>(hasToken ? null : missingTokenMessage);
     const [isSuccess, setIsSuccess] = useState(false);
 
-    const [tokenStatus, setTokenStatus] = useState<"checking" | "valid" | "invalid">(
-        hasToken ? "checking" : "invalid",
+    const [tokenStatus, setTokenStatus] = useState<"valid" | "invalid">(
+        hasToken ? "valid" : "invalid",
     );
-
-    useEffect(() => {
-        if (!token) {
-            return;
-        }
-
-        let isActive = true;
-
-        async function checkToken() {
-            try {
-                await validateResetToken(token);
-                if (!isActive) {
-                    return;
-                }
-                setTokenStatus("valid");
-            } catch (err: unknown) {
-                if (!isActive) {
-                    return;
-                }
-                const message =
-                    err instanceof Error ? err.message : "Token reset tidak valid.";
-                setMsg(message);
-                setTokenStatus("invalid");
-            }
-        }
-
-        checkToken();
-
-        return () => {
-            isActive = false;
-        };
-    }, [token]);
 
     async function onSubmit(e: React.FormEvent) {
         e.preventDefault();
@@ -88,16 +56,6 @@ function ResetContent() {
         } finally {
             setLoading(false);
         }
-    }
-
-    if (tokenStatus === "checking") {
-        return (
-            <div className="flex flex-col items-center justify-center py-10 space-y-4 animate-in fade-in">
-                <div
-                    className="h-8 w-8 animate-spin rounded-full border-4 border-[#002447]/20 border-t-[#002447]"></div>
-                <p className="text-sm font-medium text-black/60">Memverifikasi link...</p>
-            </div>
-        );
     }
 
     if (tokenStatus === "invalid") {
