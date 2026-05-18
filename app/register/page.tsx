@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
-import { useRouter } from "next/navigation";
+import React, {useState} from "react";
+import {useRouter} from "next/navigation";
 import Link from "next/link";
 
 export default function RegisterPage() {
@@ -14,12 +14,10 @@ export default function RegisterPage() {
 
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [success, setSuccess] = useState<string | null>(null);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError(null);
-        setSuccess(null);
         setIsLoading(true);
 
         if (password !== confirmPassword) {
@@ -43,7 +41,7 @@ export default function RegisterPage() {
         try {
             const res = await fetch("/api/auth/register", {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: {"Content-Type": "application/json"},
                 body: JSON.stringify({
                     email,
                     password,
@@ -57,12 +55,7 @@ export default function RegisterPage() {
                 throw new Error(data.message || "Gagal melakukan registrasi.");
             }
 
-            setSuccess("Pendaftaran berhasil! Mengalihkan Anda ke halaman login...");
-
-            setTimeout(() => {
-                router.push("/login");
-            }, 2000);
-
+            router.push(`/verify?email=${encodeURIComponent(email)}`);
         } catch (err: unknown) {
             const error = err as Error;
             setError(error.message || "Terjadi kesalahan koneksi sistem.");
@@ -73,7 +66,7 @@ export default function RegisterPage() {
 
     return (
         <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4 sm:px-6 lg:px-8">
-            <div className="w-full max-w-md space-y-8 bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
+            <div className="w-full max-w-md space-y-8 rounded-2xl border border-gray-100 bg-white p-8 shadow-sm">
                 <div>
                     <h2 className="text-center text-3xl font-extrabold tracking-tight text-emerald-600">
                         BidMart
@@ -83,25 +76,16 @@ export default function RegisterPage() {
                     </p>
                 </div>
 
-                {/* Banner Alert Tampilan Error */}
                 {error && (
-                    <div className="rounded-lg bg-red-50 p-4 text-sm font-semibold text-red-600 border border-red-100">
+                    <div className="rounded-lg border border-red-100 bg-red-50 p-4 text-sm font-semibold text-red-600">
                         {error}
-                    </div>
-                )}
-
-                {/* Banner Alert Tampilan Sukses */}
-                {success && (
-                    <div className="rounded-lg bg-green-50 p-4 text-sm font-semibold text-green-600 border border-green-100">
-                        {success}
                     </div>
                 )}
 
                 <form className="mt-8 space-y-4" onSubmit={handleSubmit}>
                     <div className="space-y-4 rounded-md">
-                        {/* Input Nama Tampilan */}
                         <div>
-                            <label htmlFor="display-name" className="block text-sm font-medium text-gray-700 mb-1">
+                            <label htmlFor="display-name" className="mb-1 block text-sm font-medium text-gray-700">
                                 Nama Tampilan (Display Name) <span className="text-red-500">*</span>
                             </label>
                             <input
@@ -112,14 +96,13 @@ export default function RegisterPage() {
                                 disabled={isLoading}
                                 value={displayName}
                                 onChange={(e) => setDisplayName(e.target.value)}
-                                className="block w-full px-3 py-2.5 border border-gray-300 rounded-lg placeholder-gray-400 text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm transition-colors"
+                                className="block w-full rounded-lg border border-gray-300 px-3 py-2.5 text-gray-900 placeholder-gray-400 transition-colors focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 sm:text-sm"
                                 placeholder="Nama Lengkap / Nama Toko"
                             />
                         </div>
 
-                        {/* Input Email */}
                         <div>
-                            <label htmlFor="email-address" className="block text-sm font-medium text-gray-700 mb-1">
+                            <label htmlFor="email-address" className="mb-1 block text-sm font-medium text-gray-700">
                                 Alamat Email <span className="text-red-500">*</span>
                             </label>
                             <input
@@ -129,14 +112,13 @@ export default function RegisterPage() {
                                 disabled={isLoading}
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
-                                className="block w-full px-3 py-2.5 border border-gray-300 rounded-lg placeholder-gray-400 text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm transition-colors"
+                                className="block w-full rounded-lg border border-gray-300 px-3 py-2.5 text-gray-900 placeholder-gray-400 transition-colors focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 sm:text-sm"
                                 placeholder="nama@email.com"
                             />
                         </div>
 
-                        {/* Input Password */}
                         <div>
-                            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+                            <label htmlFor="password" className="mb-1 block text-sm font-medium text-gray-700">
                                 Kata Sandi <span className="text-red-500">*</span>
                             </label>
                             <input
@@ -147,14 +129,13 @@ export default function RegisterPage() {
                                 disabled={isLoading}
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
-                                className="block w-full px-3 py-2.5 border border-gray-300 rounded-lg placeholder-gray-400 text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm transition-colors"
+                                className="block w-full rounded-lg border border-gray-300 px-3 py-2.5 text-gray-900 placeholder-gray-400 transition-colors focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 sm:text-sm"
                                 placeholder="•••••••• (Min. 8 Karakter)"
                             />
                         </div>
 
-                        {/* Input Konfirmasi Password */}
                         <div>
-                            <label htmlFor="confirm-password" className="block text-sm font-medium text-gray-700 mb-1">
+                            <label htmlFor="confirm-password" className="mb-1 block text-sm font-medium text-gray-700">
                                 Konfirmasi Kata Sandi <span className="text-red-500">*</span>
                             </label>
                             <input
@@ -164,7 +145,7 @@ export default function RegisterPage() {
                                 disabled={isLoading}
                                 value={confirmPassword}
                                 onChange={(e) => setConfirmPassword(e.target.value)}
-                                className="block w-full px-3 py-2.5 border border-gray-300 rounded-lg placeholder-gray-400 text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm transition-colors"
+                                className="block w-full rounded-lg border border-gray-300 px-3 py-2.5 text-gray-900 placeholder-gray-400 transition-colors focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 sm:text-sm"
                                 placeholder="••••••••"
                             />
                         </div>
@@ -174,16 +155,16 @@ export default function RegisterPage() {
                         <button
                             type="submit"
                             disabled={isLoading}
-                            className="w-full flex justify-center py-2.5 px-4 border border-transparent text-sm font-semibold rounded-lg text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                            className="flex w-full justify-center rounded-lg border border-transparent bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                         >
                             {isLoading ? "Mendaftarkan Akun..." : "Daftar Sekarang"}
                         </button>
                     </div>
 
-                    <div className="text-center mt-4">
+                    <div className="mt-4 text-center">
                         <p className="text-xs text-gray-600">
                             Sudah memiliki akun?{" "}
-                            <Link href="/login" className="font-bold text-emerald-600 hover:text-emerald-700 transition-colors">
+                            <Link href="/login" className="font-bold text-emerald-600 transition-colors hover:text-emerald-700">
                                 Masuk di sini
                             </Link>
                         </p>

@@ -1,5 +1,8 @@
 /** @type {import('next').NextConfig} */
 
+const biddingServiceUrl = process.env.BIDDING_SERVICE_URL || 'http://localhost:8080';
+const notificationServiceUrl = process.env.NOTIFICATION_SERVICE_URL || 'http://localhost:8082';
+
 const nextConfig = {
   output: 'standalone',
 
@@ -7,11 +10,11 @@ const nextConfig = {
     return [
       {
         source: '/api/bidding/ws-auction/:path*',
-        destination: `${process.env.BIDDING_SERVICE_URL}/ws-auction/:path*`,
+        destination: `${biddingServiceUrl}/ws-auction/:path*`,
       },
       {
         source: '/api/notifications/ws/notifications/:path*',
-        destination: `${process.env.NOTIFICATION_SERVICE_URL}/ws/notifications/:path*`,
+        destination: `${notificationServiceUrl}/ws/notifications/:path*`,
       },
     ];
   },
