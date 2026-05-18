@@ -20,6 +20,7 @@ export default function AuthShell({
                             src="/bidmart-logo.png"
                             alt="BidMart"
                             fill
+                            sizes="256px"
                             className="object-contain"
                             priority
                         />
