@@ -9,6 +9,8 @@ interface UserProfile {
     email: string;
     displayName: string;
     avatarUrl?: string | null;
+    roles?: string[];
+    permissions?: string[];
 }
 
 export default function MePage() {
@@ -24,6 +26,8 @@ export default function MePage() {
                     email: data?.email || data?.principal || "Email tidak ditemukan",
                     displayName: data?.displayName || data?.username || "Pengguna Tanpa Nama",
                     avatarUrl: data?.avatarUrl || null,
+                    roles: data?.roles || [],
+                    permissions: data?.permissions || [],
                 });
                 setMsg("");
             } catch (err: unknown) {
@@ -47,6 +51,11 @@ export default function MePage() {
         return name ? name.charAt(0).toUpperCase() : "?";
     };
 
+    const canOpenAdmin = Boolean(
+        user?.roles?.includes("ADMIN") ||
+        user?.permissions?.some((permission) => permission.startsWith("ADMIN_"))
+    );
+
     return (
         <AuthShell
             title="Profil Akun"
@@ -62,6 +71,7 @@ export default function MePage() {
                         {/* FOTO PROFIL / AVATAR */}
                         <div className="flex-shrink-0 w-16 h-16 rounded-full overflow-hidden bg-[#002447] text-white flex items-center justify-center text-2xl font-bold shadow-inner">
                             {user?.avatarUrl ? (
+                                // eslint-disable-next-line @next/next/no-img-element
                                 <img
                                     src={user.avatarUrl}
                                     alt="Avatar"
@@ -111,6 +121,24 @@ export default function MePage() {
                     >
                         Kelola 2FA
                     </button>
+
+                    <button
+                        onClick={() => router.push("/me/sessions")}
+                        className="w-full rounded-xl py-4 text-lg font-bold text-[#002447] bg-[#002447]/10 hover:bg-[#002447]/20 transition-all shadow-sm active:scale-[0.98]"
+                        disabled={!!msg}
+                    >
+                        Kelola Sesi Aktif
+                    </button>
+
+                    {canOpenAdmin && (
+                        <button
+                            onClick={() => router.push("/admin")}
+                            className="w-full rounded-xl py-4 text-lg font-bold text-white bg-[#006c67] hover:bg-[#00534f] transition-all shadow-md active:scale-[0.98]"
+                            disabled={!!msg}
+                        >
+                            Dashboard Admin
+                        </button>
+                    )}
 
                     <button
                         onClick={onLogout}

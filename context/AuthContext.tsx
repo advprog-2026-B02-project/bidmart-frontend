@@ -6,7 +6,7 @@ import { User, LoginSuccessResponse } from "@/types/auth";
 interface AuthContextType {
     user: User | null;
     isLoading: boolean;
-    login: (data: LoginSuccessResponse) => void;
+    login: (data: LoginSuccessResponse | User) => void;
     logout: () => Promise<void>;
     checkSession: () => Promise<void>;
 }
@@ -42,8 +42,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         return () => clearTimeout(timer);
     }, []);
 
-    const login = (data: LoginSuccessResponse) => {
-        setUser(data.user);
+    const login = (data: LoginSuccessResponse | User) => {
+        setUser("user" in data ? data.user : data);
     };
 
     const logout = async () => {

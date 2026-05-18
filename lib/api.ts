@@ -1,4 +1,7 @@
-const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080";
+const BASE_URL =
+    process.env.NEXT_PUBLIC_AUTH_API_URL ||
+    process.env.NEXT_PUBLIC_API_BASE_URL ||
+    "http://localhost:8081";
 
 type PartialLoginResponse = {
     partialToken: string;
@@ -11,6 +14,32 @@ type LoginSuccessResponse = {
     refreshToken?: string;
     expiresIn?: number;
     user?: unknown;
+};
+
+export type ActiveSession = {
+    id: string;
+    device: string;
+    ipAddress: string;
+    lastActive: string;
+    current: boolean;
+};
+
+export type AdminUser = {
+    id: string;
+    email: string;
+    displayName: string;
+    roles: string[];
+    permissions: string[];
+    status: string;
+    suspended: boolean;
+    enabled: boolean;
+    emailVerified: boolean;
+};
+
+export type AdminRole = {
+    id: string;
+    name: string;
+    permissions: string[];
 };
 
 function isPartialLoginResponse(data: unknown): data is PartialLoginResponse {
@@ -66,16 +95,6 @@ async function parseError(res: Response | null) {
     }
 }
 
-function getAccessToken() {
-    if (typeof window === "undefined") return null;
-    return localStorage.getItem("accessToken");
-}
-
-function getRefreshToken() {
-    if (typeof window === "undefined") return null;
-    return localStorage.getItem("refreshToken");
-}
-
 function setTokens(accessToken: string, refreshToken?: string) {
     if (typeof window === "undefined") return;
     localStorage.setItem("accessToken", accessToken);
@@ -84,25 +103,91 @@ function setTokens(accessToken: string, refreshToken?: string) {
     }
 }
 
+async function adminRequest<T>(path: string, options: RequestInit = {}): Promise<T> {
+    try {
+        const res = await fetch(`/api/auth${path}`, {
+            ...options,
+            headers: {
+                "Content-Type": "application/json",
+                ...(options.headers || {}),
+            },
+        });
+
+        if (!res.ok) {
+            const message = await parseError(res);
+            throw new Error(message);
+        }
+
+        if (res.status === 204) {
+            return undefined as T;
+        }
+
+        return await res.json();
+    } catch (err: unknown) {
+        if (!(err instanceof Error) || err.message === "Failed to fetch") {
+            const cleanMsg = await parseError(null);
+            throw new Error(cleanMsg);
+        }
+        throw err;
+    }
+}
+
 export async function logout() {
     if (typeof window === "undefined") return;
 
-    const refreshToken = getRefreshToken();
-
-    if (refreshToken) {
-        try {
-            await fetch(`${BASE_URL}/auth/logout`, {
-                method: "POST",
-                headers: {"Content-Type": "application/json"},
-                body: JSON.stringify({refreshToken}),
-            });
-        } catch (e) {
-            throw e; // just throw it
-        }
-    }
+    await fetch("/api/auth/logout", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+    });
 
     localStorage.removeItem("accessToken");
     localStorage.removeItem("refreshToken");
+}
+
+export async function listActiveSessions(): Promise<ActiveSession[]> {
+    try {
+        const res = await fetch("/api/auth/users/me/sessions", {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json",
+            },
+        });
+
+        if (!res.ok) {
+            const message = await parseError(res);
+            throw new Error(message);
+        }
+
+        return await res.json();
+    } catch (err: unknown) {
+        if (!(err instanceof Error) || err.message === "Failed to fetch") {
+            const cleanMsg = await parseError(null);
+            throw new Error(cleanMsg);
+        }
+        throw err;
+    }
+}
+
+export async function revokeSession(sessionId: string) {
+    try {
+        const res = await fetch(`/api/auth/users/me/sessions/${sessionId}`, {
+            method: "DELETE",
+            headers: {
+                "Content-Type": "application/json",
+            },
+        });
+
+        if (!res.ok) {
+            const message = await parseError(res);
+            throw new Error(message);
+        }
+    } catch (err: unknown) {
+        if (!(err instanceof Error) || err.message === "Failed to fetch") {
+            const cleanMsg = await parseError(null);
+            throw new Error(cleanMsg);
+        }
+        throw err;
+    }
 }
 
 export async function register(email: string, password: string, displayName: string) {
@@ -198,12 +283,10 @@ export async function verifyTwoFactor(partialToken: string, code: string): Promi
 
 export async function me() {
     try {
-        const accessToken = getAccessToken();
-        const res = await fetch(`${BASE_URL}/me`, {
+        const res = await fetch("/api/auth/me", {
             method: "GET",
             headers: {
                 "Content-Type": "application/json",
-                ...(accessToken ? {Authorization: `Bearer ${accessToken}`} : {}),
             },
         });
 
@@ -230,7 +313,7 @@ export async function me() {
 
 export async function verifyEmail(token: string) {
     try {
-        const res = await fetch(`${BASE_URL}/auth/verify?token=${token}`, {
+        const res = await fetch(`/api/auth/auth/verify?token=${encodeURIComponent(token)}`, {
             method: "GET",
         });
 
@@ -251,7 +334,7 @@ export async function verifyEmail(token: string) {
 
 export async function forgotPassword(email: string) {
     try {
-        const res = await fetch(`${BASE_URL}/auth/forgot-password`, {
+        const res = await fetch("/api/auth/auth/forgot-password", {
             method: "POST",
             headers: {"Content-Type": "application/json"},
             body: JSON.stringify({email}),
@@ -274,7 +357,7 @@ export async function forgotPassword(email: string) {
 
 export async function resetPassword(token: string, newPass: string) {
     try {
-        const res = await fetch(`${BASE_URL}/auth/reset-password`, {
+        const res = await fetch("/api/auth/auth/reset-password", {
             method: "POST",
             headers: {"Content-Type": "application/json"},
             body: JSON.stringify({token, newPassword: newPass}),
@@ -297,7 +380,7 @@ export async function resetPassword(token: string, newPass: string) {
 
 export async function validateResetToken(token: string) {
     try {
-        const res = await fetch(`${BASE_URL}/auth/reset-password/validate?token=${token}`, {
+        const res = await fetch(`/api/auth/auth/reset-password/validate?token=${encodeURIComponent(token)}`, {
             method: "GET",
         });
 
@@ -318,16 +401,10 @@ export async function validateResetToken(token: string) {
 
 export async function setupTwoFactor(method: "TOTP") {
     try {
-        const token = getAccessToken();
-        if (!token) {
-            throw new Error("Sesi tidak ditemukan, silakan login ulang.");
-        }
-
-        const res = await fetch(`${BASE_URL}/auth/2fa/setup`, {
+        const res = await fetch("/api/auth/auth/2fa/setup", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
-                "Authorization": `Bearer ${token}`,
             },
             body: JSON.stringify({method}),
         });
@@ -349,16 +426,10 @@ export async function setupTwoFactor(method: "TOTP") {
 
 export async function confirmTwoFactor(code: string) {
     try {
-        const token = getAccessToken();
-        if (!token) {
-            throw new Error("Sesi tidak ditemukan, silakan login ulang.");
-        }
-
-        const res = await fetch(`${BASE_URL}/auth/2fa/confirm`, {
+        const res = await fetch("/api/auth/auth/2fa/confirm", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
-                "Authorization": `Bearer ${token}`,
             },
             body: JSON.stringify({code}),
         });
@@ -380,16 +451,10 @@ export async function confirmTwoFactor(code: string) {
 
 export async function disableTwoFactor(password: string) {
     try {
-        const token = getAccessToken();
-        if (!token) {
-            throw new Error("Sesi tidak ditemukan, silakan login ulang.");
-        }
-
-        const res = await fetch(`${BASE_URL}/auth/2fa`, {
+        const res = await fetch("/api/auth/auth/2fa", {
             method: "DELETE",
             headers: {
                 "Content-Type": "application/json",
-                "Authorization": `Bearer ${token}`,
             },
             body: JSON.stringify({password}),
         });
@@ -411,17 +476,10 @@ export async function disableTwoFactor(password: string) {
 
 export async function updateProfile(displayName: string, avatarUrl: string) {
     try {
-        const token = getAccessToken();
-
-        if (!token) {
-            throw new Error("Sesi tidak ditemukan, silakan login ulang.");
-        }
-
-        const res = await fetch(`${BASE_URL}/me`, {
+        const res = await fetch("/api/auth/me", {
             method: "PUT",
             headers: {
                 "Content-Type": "application/json",
-                "Authorization": `Bearer ${token}`
             },
             body: JSON.stringify({displayName, avatarUrl}),
         });
@@ -439,4 +497,107 @@ export async function updateProfile(displayName: string, avatarUrl: string) {
         }
         throw err;
     }
+}
+
+export async function adminListUsers(filters: {
+    page?: number;
+    size?: number;
+    search?: string;
+    role?: string;
+    status?: string;
+} = {}): Promise<AdminUser[]> {
+    const params = new URLSearchParams();
+    params.set("page", String(filters.page ?? 0));
+    params.set("size", String(filters.size ?? 50));
+    if (filters.search) params.set("search", filters.search);
+    if (filters.role) params.set("role", filters.role);
+    if (filters.status) params.set("status", filters.status);
+
+    return adminRequest<AdminUser[]>(`/admin/users?${params.toString()}`, {
+        method: "GET",
+    });
+}
+
+export async function adminGetUser(userId: string): Promise<AdminUser> {
+    return adminRequest<AdminUser>(`/admin/users/${userId}`, {
+        method: "GET",
+    });
+}
+
+export async function adminSuspendUser(userId: string, reason: string): Promise<AdminUser> {
+    return adminRequest<AdminUser>(`/admin/users/${userId}/suspend`, {
+        method: "PATCH",
+        body: JSON.stringify({status: "SUSPENDED", reason}),
+    });
+}
+
+export async function adminUnsuspendUser(userId: string): Promise<AdminUser> {
+    return adminRequest<AdminUser>(`/admin/users/${userId}/unsuspend`, {
+        method: "PATCH",
+    });
+}
+
+export async function adminUpdateUserStatus(userId: string, status: string, reason: string): Promise<AdminUser> {
+    return adminRequest<AdminUser>(`/admin/users/${userId}/status`, {
+        method: "PUT",
+        body: JSON.stringify({status, reason}),
+    });
+}
+
+export async function adminUpdateUserRoles(userId: string, roles: string[], permissions?: string[]): Promise<AdminUser> {
+    return adminRequest<AdminUser>(`/admin/users/${userId}/roles`, {
+        method: "PUT",
+        body: JSON.stringify({roles, permissions}),
+    });
+}
+
+export async function adminAssignRole(userId: string, roleName: string): Promise<AdminUser> {
+    return adminRequest<AdminUser>(`/admin/users/${userId}/roles/${encodeURIComponent(roleName)}`, {
+        method: "POST",
+    });
+}
+
+export async function adminRevokeRole(userId: string, roleName: string): Promise<AdminUser> {
+    return adminRequest<AdminUser>(`/admin/users/${userId}/roles/${encodeURIComponent(roleName)}`, {
+        method: "DELETE",
+    });
+}
+
+export async function adminUpdateUserPermissions(userId: string, permissions: string[]): Promise<AdminUser> {
+    return adminRequest<AdminUser>(`/admin/users/${userId}/permissions`, {
+        method: "PUT",
+        body: JSON.stringify({permissions}),
+    });
+}
+
+export async function adminAssignPermission(userId: string, permission: string): Promise<AdminUser> {
+    return adminRequest<AdminUser>(`/admin/users/${userId}/permissions/${encodeURIComponent(permission)}`, {
+        method: "POST",
+    });
+}
+
+export async function adminRevokePermission(userId: string, permission: string): Promise<AdminUser> {
+    return adminRequest<AdminUser>(`/admin/users/${userId}/permissions/${encodeURIComponent(permission)}`, {
+        method: "DELETE",
+    });
+}
+
+export async function adminListRoles(): Promise<AdminRole[]> {
+    return adminRequest<AdminRole[]>("/admin/roles", {
+        method: "GET",
+    });
+}
+
+export async function adminCreateRole(name: string, permissions: string[]): Promise<AdminRole> {
+    return adminRequest<AdminRole>("/admin/roles", {
+        method: "POST",
+        body: JSON.stringify({name, permissions}),
+    });
+}
+
+export async function adminUpdateRole(roleId: string, name: string, permissions: string[]): Promise<AdminRole> {
+    return adminRequest<AdminRole>(`/admin/roles/${roleId}`, {
+        method: "PUT",
+        body: JSON.stringify({name, permissions}),
+    });
 }
