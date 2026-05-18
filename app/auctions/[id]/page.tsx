@@ -166,7 +166,7 @@ export default function AuctionDetailPage() {
 
                 {/* SISI KIRI: Foto & Deskripsi */}
                 <div className="space-y-6">
-                    <div className="aspect-square w-full overflow-hidden rounded-2xl bg-gray-50 border border-gray-100">
+                    <div className="aspect-square w-full overflow-hidden rounded-2xl bg-bidcream border border-gray-100">
                         {listing.images && listing.images.length > 0 ? (
                             <img src={listing.images[0].url} alt={listing.title} className="h-full w-full object-cover object-center" />
                         ) : (
@@ -183,19 +183,19 @@ export default function AuctionDetailPage() {
                 <div className="flex flex-col justify-between space-y-6">
                     <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm space-y-6">
                         <div>
-                            {listing.categoryName && <span className="text-xs font-bold uppercase tracking-wider text-emerald-600">{listing.categoryName}</span>}
+                            {listing.categoryName && <span className="text-xs font-bold uppercase tracking-wider text-bidnavy">{listing.categoryName}</span>}
                             <h1 className="text-2xl font-black text-gray-900 mt-1">{listing.title}</h1>
                             <p className="text-xs text-gray-400 mt-1">ID Lelang: {listing.id}</p>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-4 bg-gray-50 p-4 rounded-xl border border-gray-100">
+                        <div className="grid grid-cols-2 gap-4 bg-bidcream p-4 rounded-xl border border-gray-100">
                             <div>
                                 <p className="text-[11px] font-medium text-gray-400 uppercase">Harga Sekarang</p>
                                 <p className="text-2xl font-black text-gray-900">{formatPrice(auction ? auction.currentPrice : listing.currentPrice)}</p>
                             </div>
                             <div>
                                 <p className="text-[11px] font-medium text-gray-400 uppercase">Total Penawaran</p>
-                                <p className="text-2xl font-black text-emerald-600">{listing.bidCount} Bid</p>
+                                <p className="text-2xl font-black text-bidnavy">{listing.bidCount} Bid</p>
                             </div>
                         </div>
 
@@ -220,14 +220,14 @@ export default function AuctionDetailPage() {
                                             value={bidAmount}
                                             onChange={(e) => setBidAmount(Number(e.target.value))}
                                             step={listing.minimumIncrement}
-                                            className="block w-full rounded-lg border border-gray-300 pl-10 pr-3 py-3 text-base text-gray-900 font-bold focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                                            className="block w-full rounded-lg border border-gray-300 pl-10 pr-3 py-3 text-base text-gray-900 font-bold focus:border-bidnavy focus:outline-none focus:ring-2 focus:ring-bidnavy"
                                         />
                                     </div>
                                     <p className="mt-1.5 text-xs text-gray-400">
                                         Minimal penawaran berikutnya: <span className="font-semibold text-gray-700">{formatPrice(auction ? auction.minimumNextBid : listing.currentPrice + listing.minimumIncrement)}</span>
                                     </p>
                                 </div>
-                                <button type="submit" disabled={isSubmitting} className="w-full rounded-lg bg-emerald-600 py-3 text-sm font-bold text-white hover:bg-emerald-700 disabled:opacity-50 transition-colors">
+                                <button type="submit" disabled={isSubmitting} className="w-full rounded-lg bg-bidnavy py-3 text-sm font-bold text-white hover:bg-bidnavy2 disabled:opacity-50 transition-colors">
                                     {isSubmitting ? "Menempatkan Bid..." : user ? "Ajukan Penawaran Sekarang" : "Masuk untuk Mengajukan Bid"}
                                 </button>
                             </form>
@@ -246,7 +246,7 @@ export default function AuctionDetailPage() {
                         ) : (
                             <div className="space-y-3 max-h-[200px] overflow-y-auto pr-2">
                                 {bidHistory.map((bid, index) => (
-                                    <div key={bid.id || index} className="flex justify-between items-center text-xs p-2 rounded-lg bg-gray-50 border border-gray-100">
+                                    <div key={bid.id || index} className="flex justify-between items-center text-xs p-2 rounded-lg bg-bidcream border border-gray-100">
                                         <span className="font-medium text-gray-600">User ID: ...{bid.bidderId?.slice(-6) || "Anonim"}</span>
                                         <span className="font-black text-gray-900">{bid.amount ? formatPrice(bid.amount) : ""}</span>
                                     </div>

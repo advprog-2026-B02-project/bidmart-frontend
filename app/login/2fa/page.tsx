@@ -62,7 +62,7 @@ function TwoFactorAuthContent() {
     };
 
     return (
-        <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
+        <div className="flex min-h-screen items-center justify-center bg-bidcream px-4">
             <div className="w-full max-w-md space-y-8 bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
                 <div>
                     <h2 className="text-center text-2xl font-black tracking-tight text-gray-900">
@@ -93,7 +93,7 @@ function TwoFactorAuthContent() {
                             value={code}
                             onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
                             placeholder="000000"
-                            className="block w-full tracking-[1em] text-center text-2xl font-black px-3 py-3 border border-gray-300 rounded-xl placeholder-gray-300 text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                            className="block w-full tracking-[1em] text-center text-2xl font-black px-3 py-3 border border-gray-300 rounded-xl placeholder-gray-300 text-gray-900 focus:outline-none focus:ring-2 focus:ring-bidnavy focus:border-bidnavy"
                         />
                     </div>
 
@@ -101,7 +101,7 @@ function TwoFactorAuthContent() {
                         <button
                             type="submit"
                             disabled={isLoading || !partialToken}
-                            className="w-full flex justify-center py-2.5 px-4 text-sm font-bold rounded-lg text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:opacity-50 transition-colors"
+                            className="w-full flex justify-center py-2.5 px-4 text-sm font-bold rounded-lg text-white bg-bidnavy hover:bg-bidnavy2 focus:outline-none focus:ring-2 focus:ring-bidnavy disabled:opacity-50 transition-colors"
                         >
                             {isLoading ? "Memverifikasi..." : "Verifikasi & Masuk"}
                         </button>
@@ -123,7 +123,7 @@ function TwoFactorAuthContent() {
 export default function TwoFactorAuthPage() {
     return (
         <Suspense fallback={
-            <div className="flex min-h-screen items-center justify-center bg-gray-50">
+            <div className="flex min-h-screen items-center justify-center bg-bidcream">
                 <div className="text-sm font-bold text-gray-500 animate-pulse">
                     Memuat Gerbang Keamanan...
                 </div>

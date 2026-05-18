@@ -170,7 +170,7 @@ export default function WalletPage() {
                 ) : null}
 
                 {message ? (
-                    <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800">
+                    <div className="rounded-lg border border-bidnavy/20 bg-bidnavy/10 px-4 py-3 text-sm font-semibold text-bidnavy2">
                         {message}
                     </div>
                 ) : null}
@@ -186,7 +186,7 @@ export default function WalletPage() {
                             </div>
                             <span
                                 className={`w-fit rounded-full px-3 py-1 text-xs font-bold ${
-                                    walletFrozen ? "bg-red-100 text-red-700" : "bg-emerald-100 text-emerald-800"
+                                    walletFrozen ? "bg-red-100 text-red-700" : "bg-bidnavy/15 text-bidnavy2"
                                 }`}
                             >
                                 {loading ? "Syncing" : walletFrozen ? "Frozen" : "Active"}

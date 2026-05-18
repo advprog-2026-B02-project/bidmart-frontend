@@ -110,7 +110,7 @@ export default function NotificationsPage() {
                 {unreadCount > 0 && (
                     <button
                         onClick={handleReadAll}
-                        className="mt-4 sm:mt-0 text-xs font-bold text-emerald-600 hover:text-emerald-700 transition-colors"
+                        className="mt-4 sm:mt-0 text-xs font-bold text-bidnavy hover:text-bidnavy2 transition-colors"
                     >
                         Tandai Semua Telah Dibaca
                     </button>
@@ -128,13 +128,13 @@ export default function NotificationsPage() {
                             key={item.id}
                             onClick={() => handleNotificationClick(item)}
                             className={`p-5 rounded-2xl border transition-all cursor-pointer flex gap-4 ${item.isRead
-                                ? "bg-white border-gray-100 opacity-75 hover:bg-gray-50/50"
-                                : "bg-emerald-50/40 border-emerald-100 hover:bg-emerald-50 shadow-sm"
+                                ? "bg-white border-gray-100 opacity-75 hover:bg-bidcream/70"
+                                : "bg-bidnavy/10 border-bidnavy/15 hover:bg-bidnavy/15 shadow-sm"
                                 }`}
                         >
                             {/* Indikator unread bulatan hijau */}
                             <div className="flex items-start pt-1">
-                                <span className={`h-2.5 w-2.5 rounded-full ${item.isRead ? "bg-transparent" : "bg-emerald-500"}`} />
+                                <span className={`h-2.5 w-2.5 rounded-full ${item.isRead ? "bg-transparent" : "bg-bidnavy"}`} />
                             </div>
 
                             <div className="flex-1 space-y-1">

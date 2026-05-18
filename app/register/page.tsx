@@ -65,10 +65,10 @@ export default function RegisterPage() {
     };
 
     return (
-        <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4 sm:px-6 lg:px-8">
+        <div className="flex min-h-screen items-center justify-center bg-bidcream px-4 sm:px-6 lg:px-8">
             <div className="w-full max-w-md space-y-8 rounded-2xl border border-gray-100 bg-white p-8 shadow-sm">
                 <div>
-                    <h2 className="text-center text-3xl font-extrabold tracking-tight text-emerald-600">
+                    <h2 className="text-center text-3xl font-extrabold tracking-tight text-bidnavy">
                         BidMart
                     </h2>
                     <p className="mt-2 text-center text-sm text-gray-600">
@@ -96,7 +96,7 @@ export default function RegisterPage() {
                                 disabled={isLoading}
                                 value={displayName}
                                 onChange={(e) => setDisplayName(e.target.value)}
-                                className="block w-full rounded-lg border border-gray-300 px-3 py-2.5 text-gray-900 placeholder-gray-400 transition-colors focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 sm:text-sm"
+                                className="block w-full rounded-lg border border-gray-300 px-3 py-2.5 text-gray-900 placeholder-gray-400 transition-colors focus:border-bidnavy focus:outline-none focus:ring-2 focus:ring-bidnavy sm:text-sm"
                                 placeholder="Nama Lengkap / Nama Toko"
                             />
                         </div>
@@ -112,7 +112,7 @@ export default function RegisterPage() {
                                 disabled={isLoading}
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
-                                className="block w-full rounded-lg border border-gray-300 px-3 py-2.5 text-gray-900 placeholder-gray-400 transition-colors focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 sm:text-sm"
+                                className="block w-full rounded-lg border border-gray-300 px-3 py-2.5 text-gray-900 placeholder-gray-400 transition-colors focus:border-bidnavy focus:outline-none focus:ring-2 focus:ring-bidnavy sm:text-sm"
                                 placeholder="nama@email.com"
                             />
                         </div>
@@ -129,7 +129,7 @@ export default function RegisterPage() {
                                 disabled={isLoading}
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
-                                className="block w-full rounded-lg border border-gray-300 px-3 py-2.5 text-gray-900 placeholder-gray-400 transition-colors focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 sm:text-sm"
+                                className="block w-full rounded-lg border border-gray-300 px-3 py-2.5 text-gray-900 placeholder-gray-400 transition-colors focus:border-bidnavy focus:outline-none focus:ring-2 focus:ring-bidnavy sm:text-sm"
                                 placeholder="•••••••• (Min. 8 Karakter)"
                             />
                         </div>
@@ -145,7 +145,7 @@ export default function RegisterPage() {
                                 disabled={isLoading}
                                 value={confirmPassword}
                                 onChange={(e) => setConfirmPassword(e.target.value)}
-                                className="block w-full rounded-lg border border-gray-300 px-3 py-2.5 text-gray-900 placeholder-gray-400 transition-colors focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 sm:text-sm"
+                                className="block w-full rounded-lg border border-gray-300 px-3 py-2.5 text-gray-900 placeholder-gray-400 transition-colors focus:border-bidnavy focus:outline-none focus:ring-2 focus:ring-bidnavy sm:text-sm"
                                 placeholder="••••••••"
                             />
                         </div>
@@ -155,7 +155,7 @@ export default function RegisterPage() {
                         <button
                             type="submit"
                             disabled={isLoading}
-                            className="flex w-full justify-center rounded-lg border border-transparent bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                            className="flex w-full justify-center rounded-lg border border-transparent bg-bidnavy px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-bidnavy2 focus:outline-none focus:ring-2 focus:ring-bidnavy focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                         >
                             {isLoading ? "Mendaftarkan Akun..." : "Daftar Sekarang"}
                         </button>
@@ -164,7 +164,7 @@ export default function RegisterPage() {
                     <div className="mt-4 text-center">
                         <p className="text-xs text-gray-600">
                             Sudah memiliki akun?{" "}
-                            <Link href="/login" className="font-bold text-emerald-600 transition-colors hover:text-emerald-700">
+                            <Link href="/login" className="font-bold text-bidnavy transition-colors hover:text-bidnavy2">
                                 Masuk di sini
                             </Link>
                         </p>

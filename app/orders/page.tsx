@@ -77,7 +77,7 @@ export default function OrdersPage() {
             case "COMPLETED": return "bg-green-50 text-green-700 ring-1 ring-green-600/20";
             case "DISPUTED": return "bg-red-50 text-red-700 ring-1 ring-red-600/20";
             case "RESOLVED": return "bg-gray-100 text-gray-700";
-            default: return "bg-gray-50 text-gray-600";
+            default: return "bg-bidcream text-gray-600";
         }
     };
 
@@ -100,14 +100,14 @@ export default function OrdersPage() {
             <div className="flex gap-4 border-b border-gray-200 mb-8 text-sm font-semibold">
                 <button
                     onClick={() => setActiveTab('BUYER')}
-                    className={`pb-3 transition-all ${activeTab === 'BUYER' ? "border-b-2 border-emerald-600 text-emerald-600 font-bold" : "text-gray-400 hover:text-gray-600"}`}
+                    className={`pb-3 transition-all ${activeTab === 'BUYER' ? "border-b-2 border-bidnavy text-bidnavy font-bold" : "text-gray-400 hover:text-gray-600"}`}
                 >
                     Pesanan Saya (Pembeli)
                 </button>
                 {user.roles.includes('SELLER') && (
                     <button
                         onClick={() => setActiveTab('SELLER')}
-                        className={`pb-3 transition-all ${activeTab === 'SELLER' ? "border-b-2 border-emerald-600 text-emerald-600 font-bold" : "text-gray-400 hover:text-gray-600"}`}
+                        className={`pb-3 transition-all ${activeTab === 'SELLER' ? "border-b-2 border-bidnavy text-bidnavy font-bold" : "text-gray-400 hover:text-gray-600"}`}
                     >
                         Penjualan Saya (Penjual)
                     </button>
@@ -147,7 +147,7 @@ export default function OrdersPage() {
 
                                 {/* Tampilkan info kurir jika barang sudah dikirim */}
                                 {order.trackingNumber && (
-                                    <div className="mt-2 text-xs bg-gray-50 border border-gray-100 rounded-lg p-2.5 max-w-md text-gray-600">
+                                    <div className="mt-2 text-xs bg-bidcream border border-gray-100 rounded-lg p-2.5 max-w-md text-gray-600">
                                         🚚 <span className="font-bold text-gray-900">{order.courier}</span> - Resi: <span className="font-mono bg-white px-1 py-0.5 border rounded">{order.trackingNumber}</span>
                                     </div>
                                 )}
@@ -159,7 +159,7 @@ export default function OrdersPage() {
                                 {activeTab === 'SELLER' && order.status === 'CREATED' && (
                                     <button
                                         onClick={() => handleUpdateStatus(order.id, "ship")}
-                                        className="rounded-lg bg-emerald-600 px-4 py-2 text-xs font-bold text-white hover:bg-emerald-700 shadow-sm transition-colors"
+                                        className="rounded-lg bg-bidnavy px-4 py-2 text-xs font-bold text-white hover:bg-bidnavy2 shadow-sm transition-colors"
                                     >
                                         Kirim Barang (Input Resi)
                                     </button>
@@ -170,7 +170,7 @@ export default function OrdersPage() {
                                     <>
                                         <button
                                             onClick={() => handleUpdateStatus(order.id, "receive")}
-                                            className="rounded-lg bg-emerald-600 px-4 py-2 text-xs font-bold text-white hover:bg-emerald-700 shadow-sm transition-colors"
+                                            className="rounded-lg bg-bidnavy px-4 py-2 text-xs font-bold text-white hover:bg-bidnavy2 shadow-sm transition-colors"
                                         >
                                             Konfirmasi Selesai
                                         </button>

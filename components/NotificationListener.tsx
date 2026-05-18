@@ -59,10 +59,10 @@ export default function NotificationListener() {
     if (!activeToast) return null;
 
     return (
-        <div className="fixed bottom-5 right-5 z-50 max-w-sm w-full bg-white rounded-2xl shadow-xl border border-emerald-100 p-4 animate-slide-in transition-all">
+        <div className="fixed bottom-5 right-5 z-50 max-w-sm w-full bg-white rounded-2xl shadow-xl border border-bidnavy/15 p-4 animate-slide-in transition-all">
             <div className="flex items-start gap-3">
                 {/* Bulatan Icon Indikator */}
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 font-bold text-sm animate-pulse">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-bidnavy/15 text-bidnavy font-bold text-sm animate-pulse">
                     🔔
                 </div>
 

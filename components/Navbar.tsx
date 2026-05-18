@@ -22,17 +22,17 @@ export default function Navbar() {
 
                     {/* Kiri: Brand Logo */}
                     <div className="flex items-center gap-8">
-                        <Link href="/" className="text-xl font-black tracking-tight text-emerald-600">
+                        <Link href="/" className="text-xl font-black tracking-tight text-bidnavy">
                             BidMart
                         </Link>
 
                         {/* Menu Navigasi Utama */}
                         <div className="hidden md:flex items-center gap-6 text-sm font-medium text-gray-600">
-                            <Link href="/" className="hover:text-emerald-600 transition-colors">
+                            <Link href="/" className="hover:text-bidnavy transition-colors">
                                 Katalog Lelang
                             </Link>
                             {user?.roles.includes("SELLER") && (
-                                <Link href="/seller/listings" className="hover:text-emerald-600 transition-colors">
+                                <Link href="/seller/listings" className="hover:text-bidnavy transition-colors">
                                     Dashboard Penjual
                                 </Link>
                             )}
@@ -48,7 +48,7 @@ export default function Navbar() {
                                 {/* Informasi Ringkas Profil */}
                                 <div className="hidden sm:flex flex-col text-right">
                                     <span className="text-sm font-semibold text-gray-900">{user.displayName}</span>
-                                    <span className="text-xs font-medium text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded self-end uppercase tracking-wider">
+                                    <span className="text-xs font-medium text-bidnavy bg-bidnavy/10 px-1.5 py-0.5 rounded self-end uppercase tracking-wider">
                                         {user.roles.includes("ADMIN") ? "Admin" : user.roles.includes("SELLER") ? "Seller" : "Buyer"}
                                     </span>
                                 </div>
@@ -67,7 +67,7 @@ export default function Navbar() {
                                 {/* Tombol Keluar Sesi */}
                                 <button
                                     onClick={handleLogout}
-                                    className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-600 hover:bg-gray-50 hover:text-red-600 transition-all"
+                                    className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-600 hover:bg-bidcream hover:text-red-600 transition-all"
                                 >
                                     Keluar
                                 </button>
@@ -76,13 +76,13 @@ export default function Navbar() {
                             <div className="flex items-center gap-3">
                                 <Link
                                     href="/login"
-                                    className="text-sm font-semibold text-gray-600 hover:text-emerald-600 transition-colors"
+                                    className="text-sm font-semibold text-gray-600 hover:text-bidnavy transition-colors"
                                 >
                                     Masuk
                                 </Link>
                                 <Link
                                     href="/register"
-                                    className="rounded-lg bg-emerald-600 px-3.5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700 transition-colors"
+                                    className="rounded-lg bg-bidnavy px-3.5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-bidnavy2 transition-colors"
                                 >
                                     Daftar
                                 </Link>

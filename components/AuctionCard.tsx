@@ -38,7 +38,7 @@ export default function AuctionCard({ listing }: AuctionCardProps) {
     return (
         <div className="group relative flex flex-col overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm transition-all hover:-translate-y-1 hover:shadow-md">
             {/* Container Gambar / Thumbnail */}
-            <div className="aspect-square w-full bg-gray-50 overflow-hidden relative">
+            <div className="aspect-square w-full bg-bidcream overflow-hidden relative">
                 {listing.thumbnailUrl ? (
                     <img
                         src={listing.thumbnailUrl}
@@ -60,12 +60,12 @@ export default function AuctionCard({ listing }: AuctionCardProps) {
             {/* Konten Informasi Produk */}
             <div className="flex flex-1 flex-col p-4">
                 {listing.categoryName && (
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-600 mb-1">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-bidnavy mb-1">
                         {listing.categoryName}
                     </span>
                 )}
 
-                <h3 className="text-sm font-semibold text-gray-900 line-clamp-2 min-h-[40px] mb-2 group-hover:text-emerald-600 transition-colors">
+                <h3 className="text-sm font-semibold text-gray-900 line-clamp-2 min-h-[40px] mb-2 group-hover:text-bidnavy transition-colors">
                     <Link href={`/auctions/${listing.id}`}>
                         <span className="absolute inset-0" aria-hidden="true" />
                         {listing.title}
@@ -83,7 +83,7 @@ export default function AuctionCard({ listing }: AuctionCardProps) {
                     </div>
 
                     <div className="text-right">
-                        <span className="inline-flex items-center rounded-full bg-gray-50 px-2 py-1 text-xs font-medium text-gray-600 border border-gray-100">
+                        <span className="inline-flex items-center rounded-full bg-bidcream px-2 py-1 text-xs font-medium text-gray-600 border border-gray-100">
                             {listing.bidCount} Bid
                         </span>
                     </div>

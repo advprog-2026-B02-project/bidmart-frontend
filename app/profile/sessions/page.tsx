@@ -109,7 +109,7 @@ export default function SessionManagementPage() {
 
                 <div className="divide-y divide-gray-100">
                     {sessions.map((session) => (
-                        <div key={session.id} className="p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 hover:bg-gray-50/50 transition-colors">
+                        <div key={session.id} className="p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 hover:bg-bidcream/70 transition-colors">
 
                             {/* Kiri: Informasi Metadata Sesi Perangkat */}
                             <div className="flex gap-4 items-start">
@@ -122,7 +122,7 @@ export default function SessionManagementPage() {
                                             {parseUserAgent(session.userAgent)}
                                         </h4>
                                         {session.isCurrentSession && (
-                                            <span className="inline-flex items-center rounded-md bg-emerald-50 px-2 py-0.5 text-xs font-bold text-emerald-700 ring-1 ring-inset ring-emerald-600/20">
+                                            <span className="inline-flex items-center rounded-md bg-bidnavy/10 px-2 py-0.5 text-xs font-bold text-bidnavy2 ring-1 ring-inset ring-bidnavy/20">
                                                 Perangkat Ini
                                             </span>
                                         )}

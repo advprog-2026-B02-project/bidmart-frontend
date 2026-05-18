@@ -49,10 +49,10 @@ export default function LoginPage() {
     };
 
     return (
-        <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4 sm:px-6 lg:px-8">
+        <div className="flex min-h-screen items-center justify-center bg-bidcream px-4 sm:px-6 lg:px-8">
             <div className="w-full max-w-md space-y-8 rounded-2xl border border-gray-100 bg-white p-8 shadow-sm">
                 <div>
-                    <h2 className="text-center text-3xl font-black tracking-tight text-emerald-600">
+                    <h2 className="text-center text-3xl font-black tracking-tight text-bidnavy">
                         BidMart
                     </h2>
                     <p className="mt-2 text-center text-sm text-gray-500">
@@ -79,7 +79,7 @@ export default function LoginPage() {
                                 disabled={isLoading}
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
-                                className="block w-full rounded-lg border border-gray-300 px-3 py-2.5 text-gray-900 placeholder-gray-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 sm:text-sm"
+                                className="block w-full rounded-lg border border-gray-300 px-3 py-2.5 text-gray-900 placeholder-gray-400 focus:border-bidnavy focus:outline-none focus:ring-2 focus:ring-bidnavy sm:text-sm"
                                 placeholder="nama@email.com"
                             />
                         </div>
@@ -95,14 +95,14 @@ export default function LoginPage() {
                                 disabled={isLoading}
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
-                                className="block w-full rounded-lg border border-gray-300 px-3 py-2.5 text-gray-900 placeholder-gray-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 sm:text-sm"
+                                className="block w-full rounded-lg border border-gray-300 px-3 py-2.5 text-gray-900 placeholder-gray-400 focus:border-bidnavy focus:outline-none focus:ring-2 focus:ring-bidnavy sm:text-sm"
                                 placeholder="••••••••"
                             />
                         </div>
                     </div>
 
                     <div className="flex justify-end">
-                        <Link href="/auth/forgot" className="text-sm font-medium text-emerald-600 hover:text-emerald-700 hover:underline">
+                        <Link href="/auth/forgot" className="text-sm font-medium text-bidnavy hover:text-bidnavy2 hover:underline">
                             Lupa kata sandi?
                         </Link>
                     </div>
@@ -110,7 +110,7 @@ export default function LoginPage() {
                     <button
                         type="submit"
                         disabled={isLoading}
-                        className="flex w-full justify-center rounded-lg border border-transparent bg-emerald-600 px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 disabled:opacity-50"
+                        className="flex w-full justify-center rounded-lg border border-transparent bg-bidnavy px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-bidnavy2 focus:outline-none focus:ring-2 focus:ring-bidnavy focus:ring-offset-2 disabled:opacity-50"
                     >
                         {isLoading ? "Membuka Sesi..." : "Masuk ke Akun"}
                     </button>
@@ -118,7 +118,7 @@ export default function LoginPage() {
                     <div className="text-center">
                         <p className="text-xs text-gray-600">
                             Belum punya akun?{" "}
-                            <Link href="/register" className="font-bold text-emerald-600 transition-colors hover:text-emerald-700">
+                            <Link href="/register" className="font-bold text-bidnavy transition-colors hover:text-bidnavy2">
                                 Daftar baru di sini
                             </Link>
                         </p>

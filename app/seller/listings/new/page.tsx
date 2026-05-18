@@ -107,7 +107,7 @@ export default function NewListingPage() {
                         value={title}
                         onChange={(e) => setTitle(e.target.value)}
                         placeholder="Contoh: MacBook Pro M3 Max 2024 16GB/512GB (Maksimal 200 karakter)"
-                        className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                        className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-bidnavy focus:outline-none focus:ring-2 focus:ring-bidnavy"
                     />
                 </div>
 
@@ -123,7 +123,7 @@ export default function NewListingPage() {
                             value={categoryId}
                             onChange={(e) => setCategoryId(e.target.value)}
                             placeholder="Masukkan UUID Kategori produk"
-                            className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                            className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-bidnavy focus:outline-none focus:ring-2 focus:ring-bidnavy"
                         />
                     </div>
 
@@ -135,7 +135,7 @@ export default function NewListingPage() {
                             id="duration"
                             value={auctionDuration}
                             onChange={(e) => setAuctionDuration(Number(e.target.value))}
-                            className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm bg-white focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                            className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm bg-white focus:border-bidnavy focus:outline-none focus:ring-2 focus:ring-bidnavy"
                         >
                             <option value={3600}>1 Jam (3600 detik)</option>
                             <option value={86400}>1 Hari (86400 detik)</option>
@@ -156,7 +156,7 @@ export default function NewListingPage() {
                         value={description}
                         onChange={(e) => setDescription(e.target.value)}
                         placeholder="Jelaskan kondisi fisik barang, kelengkapan, kelayakan, serta minus jika ada..."
-                        className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                        className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-bidnavy focus:outline-none focus:ring-2 focus:ring-bidnavy"
                     />
                 </div>
 
@@ -173,7 +173,7 @@ export default function NewListingPage() {
                             min={0}
                             value={startingPrice || ""}
                             onChange={(e) => setStartingPrice(Number(e.target.value))}
-                            className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                            className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-bidnavy focus:outline-none focus:ring-2 focus:ring-bidnavy"
                         />
                     </div>
 
@@ -187,7 +187,7 @@ export default function NewListingPage() {
                             min={0}
                             value={reservePrice || ""}
                             onChange={(e) => setReservePrice(Number(e.target.value))}
-                            className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                            className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-bidnavy focus:outline-none focus:ring-2 focus:ring-bidnavy"
                         />
                     </div>
 
@@ -202,7 +202,7 @@ export default function NewListingPage() {
                             min={1}
                             value={minimumIncrement || ""}
                             onChange={(e) => setMinimumIncrement(Number(e.target.value))}
-                            className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                            className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-bidnavy focus:outline-none focus:ring-2 focus:ring-bidnavy"
                         />
                     </div>
                 </div>
@@ -218,7 +218,7 @@ export default function NewListingPage() {
                         value={imageUrl}
                         onChange={(e) => setImageUrl(e.target.value)}
                         placeholder="https://domain-gambar.com/foto-barang.png"
-                        className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                        className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-bidnavy focus:outline-none focus:ring-2 focus:ring-bidnavy"
                     />
                 </div>
 
@@ -227,14 +227,14 @@ export default function NewListingPage() {
                     <button
                         type="button"
                         onClick={() => router.back()}
-                        className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+                        className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-bidcream"
                     >
                         Batal
                     </button>
                     <button
                         type="submit"
                         disabled={isSubmitting}
-                        className="rounded-lg bg-emerald-600 px-5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:opacity-50 transition-colors"
+                        className="rounded-lg bg-bidnavy px-5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-bidnavy2 focus:outline-none focus:ring-2 focus:ring-bidnavy disabled:opacity-50 transition-colors"
                     >
                         {isSubmitting ? "Menyimpan..." : "Simpan sebagai Draft"}
                     </button>

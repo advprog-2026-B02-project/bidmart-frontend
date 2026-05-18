@@ -65,7 +65,7 @@ export default function HomePage() {
           <p className="text-sm font-semibold text-red-600">{error}</p>
           <button
             onClick={() => window.location.reload()}
-            className="mt-4 inline-flex items-center rounded-lg bg-white px-3 py-2 text-xs font-semibold text-gray-700 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
+            className="mt-4 inline-flex items-center rounded-lg bg-white px-3 py-2 text-xs font-semibold text-gray-700 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-bidcream"
           >
             Coba Lagi
           </button>

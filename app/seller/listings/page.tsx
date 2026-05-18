@@ -96,7 +96,7 @@ export default function SellerDashboardPage() {
                 <div className="mt-4 sm:ml-4 sm:mt-0">
                     <Link
                         href="/seller/listings/new"
-                        className="inline-flex items-center rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700 transition-colors"
+                        className="inline-flex items-center rounded-lg bg-bidnavy px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-bidnavy2 transition-colors"
                     >
                         Mulai Lelang Baru
                     </Link>
@@ -124,7 +124,7 @@ export default function SellerDashboardPage() {
                     <p className="text-sm font-medium text-gray-400 mb-4">Anda belum memasang barang lelang apa pun.</p>
                     <Link
                         href="/seller/listings/new"
-                        className="text-sm font-bold text-emerald-600 hover:text-emerald-700"
+                        className="text-sm font-bold text-bidnavy hover:text-bidnavy2"
                     >
                         Buat listing pertama Anda &rarr;
                     </Link>
@@ -136,7 +136,7 @@ export default function SellerDashboardPage() {
                 <div className="overflow-hidden bg-white shadow-sm border border-gray-100 rounded-2xl">
                     <div className="inline-block min-w-full align-middle">
                         <table className="min-w-full divide-y divide-gray-100 text-left">
-                            <thead className="bg-gray-50 text-xs font-bold uppercase tracking-wider text-gray-500">
+                            <thead className="bg-bidcream text-xs font-bold uppercase tracking-wider text-gray-500">
                                 <tr>
                                     <th scope="col" className="py-4 px-6">Barang</th>
                                     <th scope="col" className="py-4 px-6">Status</th>
@@ -147,9 +147,9 @@ export default function SellerDashboardPage() {
                             </thead>
                             <tbody className="divide-y divide-gray-100 text-sm font-medium text-gray-900">
                                 {listings.map((item) => (
-                                    <tr key={item.id} className="hover:bg-gray-50/50 transition-colors">
+                                    <tr key={item.id} className="hover:bg-bidcream/70 transition-colors">
                                         <td className="py-4 px-6 flex items-center gap-4">
-                                            <div className="h-12 w-12 flex-shrink-0 overflow-hidden rounded-lg border border-gray-100 bg-gray-50">
+                                            <div className="h-12 w-12 flex-shrink-0 overflow-hidden rounded-lg border border-gray-100 bg-bidcream">
                                                 {item.images && item.images.length > 0 ? (
                                                     <img src={item.images[0].url} alt="" className="h-full w-full object-cover" />
                                                 ) : (
@@ -180,7 +180,7 @@ export default function SellerDashboardPage() {
                                                 <span className="text-xs text-gray-500 font-semibold">{item.bidCount} Bidder</span>
                                                 <Link
                                                     href={`/auctions/${item.id}`}
-                                                    className="text-xs font-bold text-emerald-600 hover:text-emerald-700 whitespace-nowrap"
+                                                    className="text-xs font-bold text-bidnavy hover:text-bidnavy2 whitespace-nowrap"
                                                 >
                                                     Lihat Detail
                                                 </Link>
@@ -189,7 +189,7 @@ export default function SellerDashboardPage() {
                                                     <button
                                                         onClick={() => handleActivate(item.id)}
                                                         disabled={actionLoadingId === item.id}
-                                                        className="rounded-lg bg-emerald-50 px-2.5 py-1.5 text-xs font-bold text-emerald-700 hover:bg-emerald-100 disabled:opacity-50 transition-colors whitespace-nowrap"
+                                                        className="rounded-lg bg-bidnavy/10 px-2.5 py-1.5 text-xs font-bold text-bidnavy2 hover:bg-bidnavy/15 disabled:opacity-50 transition-colors whitespace-nowrap"
                                                     >
                                                         {actionLoadingId === item.id ? "Memproses..." : "Aktifkan Lelang"}
                                                     </button>

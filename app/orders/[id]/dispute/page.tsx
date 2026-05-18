@@ -121,7 +121,7 @@ export default function DisputeOrderPage() {
                         value={reason}
                         onChange={(e) => setReason(e.target.value)}
                         placeholder="Contoh: Barang rusak saat sampai / Spesifikasi tidak sesuai deskripsi"
-                        className="block w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                        className="block w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:border-bidnavy focus:outline-none focus:ring-2 focus:ring-bidnavy"
                     />
                 </div>
 
@@ -137,7 +137,7 @@ export default function DisputeOrderPage() {
                         value={description}
                         onChange={(e) => setDescription(e.target.value)}
                         placeholder="Ceritakan secara detail kronologi masalah, kondisi kemasan paket, beserta ketidaksesuaian barang lelang yang diterima..."
-                        className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                        className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-bidnavy focus:outline-none focus:ring-2 focus:ring-bidnavy"
                     />
                 </div>
 
@@ -152,7 +152,7 @@ export default function DisputeOrderPage() {
                         value={evidenceUrl}
                         onChange={(e) => setEvidenceUrl(e.target.value)}
                         placeholder="https://domain-bukti.com/foto-unboxing.png"
-                        className="block w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                        className="block w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:border-bidnavy focus:outline-none focus:ring-2 focus:ring-bidnavy"
                     />
                     <p className="mt-1.5 text-[11px] text-gray-400">
                         Sangat disarankan menyertakan link foto unboxing paket sebagai bahan evaluasi peninjauan Admin.
@@ -164,7 +164,7 @@ export default function DisputeOrderPage() {
                     <button
                         type="button"
                         onClick={() => router.back()}
-                        className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+                        className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-bidcream"
                     >
                         Batal
                     </button>
