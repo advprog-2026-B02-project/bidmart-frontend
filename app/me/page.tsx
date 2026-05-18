@@ -9,6 +9,8 @@ interface UserProfile {
     email: string;
     displayName: string;
     avatarUrl?: string | null;
+    roles?: string[];
+    permissions?: string[];
 }
 
 export default function MePage() {
@@ -24,6 +26,8 @@ export default function MePage() {
                     email: data?.email || data?.principal || "Email tidak ditemukan",
                     displayName: data?.displayName || data?.username || "Pengguna Tanpa Nama",
                     avatarUrl: data?.avatarUrl || null,
+                    roles: data?.roles || [],
+                    permissions: data?.permissions || [],
                 });
                 setMsg("");
             } catch (err: unknown) {
@@ -46,6 +50,11 @@ export default function MePage() {
     const getInitials = (name: string) => {
         return name ? name.charAt(0).toUpperCase() : "?";
     };
+
+    const canOpenAdmin = Boolean(
+        user?.roles?.includes("ADMIN") ||
+        user?.permissions?.some((permission) => permission.startsWith("ADMIN_"))
+    );
 
     return (
         <AuthShell
@@ -120,6 +129,16 @@ export default function MePage() {
                     >
                         Kelola Sesi Aktif
                     </button>
+
+                    {canOpenAdmin && (
+                        <button
+                            onClick={() => router.push("/admin")}
+                            className="w-full rounded-xl py-4 text-lg font-bold text-white bg-[#006c67] hover:bg-[#00534f] transition-all shadow-md active:scale-[0.98]"
+                            disabled={!!msg}
+                        >
+                            Dashboard Admin
+                        </button>
+                    )}
 
                     <button
                         onClick={onLogout}

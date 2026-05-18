@@ -24,6 +24,24 @@ export type ActiveSession = {
     current: boolean;
 };
 
+export type AdminUser = {
+    id: string;
+    email: string;
+    displayName: string;
+    roles: string[];
+    permissions: string[];
+    status: string;
+    suspended: boolean;
+    enabled: boolean;
+    emailVerified: boolean;
+};
+
+export type AdminRole = {
+    id: string;
+    name: string;
+    permissions: string[];
+};
+
 function isPartialLoginResponse(data: unknown): data is PartialLoginResponse {
     const value = data as Partial<Record<keyof PartialLoginResponse, unknown>>;
     return value.requires2FA === true && typeof value.partialToken === "string";
@@ -91,6 +109,47 @@ function setTokens(accessToken: string, refreshToken?: string) {
     localStorage.setItem("accessToken", accessToken);
     if (refreshToken) {
         localStorage.setItem("refreshToken", refreshToken);
+    }
+}
+
+function authHeaders() {
+    const token = getAccessToken();
+    if (!token) {
+        throw new Error("Sesi tidak ditemukan, silakan login ulang.");
+    }
+
+    return {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+    };
+}
+
+async function adminRequest<T>(path: string, options: RequestInit = {}): Promise<T> {
+    try {
+        const res = await fetch(`${BASE_URL}${path}`, {
+            ...options,
+            headers: {
+                ...authHeaders(),
+                ...(options.headers || {}),
+            },
+        });
+
+        if (!res.ok) {
+            const message = await parseError(res);
+            throw new Error(message);
+        }
+
+        if (res.status === 204) {
+            return undefined as T;
+        }
+
+        return await res.json();
+    } catch (err: unknown) {
+        if (!(err instanceof Error) || err.message === "Failed to fetch") {
+            const cleanMsg = await parseError(null);
+            throw new Error(cleanMsg);
+        }
+        throw err;
     }
 }
 
@@ -506,4 +565,107 @@ export async function updateProfile(displayName: string, avatarUrl: string) {
         }
         throw err;
     }
+}
+
+export async function adminListUsers(filters: {
+    page?: number;
+    size?: number;
+    search?: string;
+    role?: string;
+    status?: string;
+} = {}): Promise<AdminUser[]> {
+    const params = new URLSearchParams();
+    params.set("page", String(filters.page ?? 0));
+    params.set("size", String(filters.size ?? 50));
+    if (filters.search) params.set("search", filters.search);
+    if (filters.role) params.set("role", filters.role);
+    if (filters.status) params.set("status", filters.status);
+
+    return adminRequest<AdminUser[]>(`/admin/users?${params.toString()}`, {
+        method: "GET",
+    });
+}
+
+export async function adminGetUser(userId: string): Promise<AdminUser> {
+    return adminRequest<AdminUser>(`/admin/users/${userId}`, {
+        method: "GET",
+    });
+}
+
+export async function adminSuspendUser(userId: string, reason: string): Promise<AdminUser> {
+    return adminRequest<AdminUser>(`/admin/users/${userId}/suspend`, {
+        method: "PATCH",
+        body: JSON.stringify({status: "SUSPENDED", reason}),
+    });
+}
+
+export async function adminUnsuspendUser(userId: string): Promise<AdminUser> {
+    return adminRequest<AdminUser>(`/admin/users/${userId}/unsuspend`, {
+        method: "PATCH",
+    });
+}
+
+export async function adminUpdateUserStatus(userId: string, status: string, reason: string): Promise<AdminUser> {
+    return adminRequest<AdminUser>(`/admin/users/${userId}/status`, {
+        method: "PUT",
+        body: JSON.stringify({status, reason}),
+    });
+}
+
+export async function adminUpdateUserRoles(userId: string, roles: string[], permissions?: string[]): Promise<AdminUser> {
+    return adminRequest<AdminUser>(`/admin/users/${userId}/roles`, {
+        method: "PUT",
+        body: JSON.stringify({roles, permissions}),
+    });
+}
+
+export async function adminAssignRole(userId: string, roleName: string): Promise<AdminUser> {
+    return adminRequest<AdminUser>(`/admin/users/${userId}/roles/${encodeURIComponent(roleName)}`, {
+        method: "POST",
+    });
+}
+
+export async function adminRevokeRole(userId: string, roleName: string): Promise<AdminUser> {
+    return adminRequest<AdminUser>(`/admin/users/${userId}/roles/${encodeURIComponent(roleName)}`, {
+        method: "DELETE",
+    });
+}
+
+export async function adminUpdateUserPermissions(userId: string, permissions: string[]): Promise<AdminUser> {
+    return adminRequest<AdminUser>(`/admin/users/${userId}/permissions`, {
+        method: "PUT",
+        body: JSON.stringify({permissions}),
+    });
+}
+
+export async function adminAssignPermission(userId: string, permission: string): Promise<AdminUser> {
+    return adminRequest<AdminUser>(`/admin/users/${userId}/permissions/${encodeURIComponent(permission)}`, {
+        method: "POST",
+    });
+}
+
+export async function adminRevokePermission(userId: string, permission: string): Promise<AdminUser> {
+    return adminRequest<AdminUser>(`/admin/users/${userId}/permissions/${encodeURIComponent(permission)}`, {
+        method: "DELETE",
+    });
+}
+
+export async function adminListRoles(): Promise<AdminRole[]> {
+    return adminRequest<AdminRole[]>("/admin/roles", {
+        method: "GET",
+    });
+}
+
+export async function adminCreateRole(name: string, permissions: string[]): Promise<AdminRole> {
+    return adminRequest<AdminRole>("/admin/roles", {
+        method: "POST",
+        body: JSON.stringify({name, permissions}),
+    });
+}
+
+export async function adminUpdateRole(roleId: string, name: string, permissions: string[]): Promise<AdminRole> {
+    return adminRequest<AdminRole>(`/admin/roles/${roleId}`, {
+        method: "PUT",
+        body: JSON.stringify({name, permissions}),
+    });
 }
