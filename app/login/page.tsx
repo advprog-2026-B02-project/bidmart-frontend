@@ -13,15 +13,15 @@ type PartialLoginResponse = {
     expiresIn: number;
 };
 
-function isPartialResponse(data: any): data is PartialLoginResponse {
-    return Boolean(data?.requires2FA && data?.partialToken);
+function isPartialResponse(data: unknown): data is PartialLoginResponse {
+    const value = data as Partial<Record<keyof PartialLoginResponse, unknown>>;
+    return value.requires2FA === true && typeof value.partialToken === "string";
 }
 
 export default function LoginPage() {
     const [email, setEmail] = useState("");
     const [pass, setPass] = useState("");
     const [loading, setLoading] = useState(false);
-    const [isChecking, setIsChecking] = useState(true);
     const [msg, setMsg] = useState<string | null>(null);
     const [partialToken, setPartialToken] = useState<string | null>(null);
     const [twoFactorCode, setTwoFactorCode] = useState("");
@@ -31,8 +31,6 @@ export default function LoginPage() {
         const token = localStorage.getItem("accessToken");
         if (token) {
             router.replace("/me");
-        } else {
-            setIsChecking(false);
         }
     }, [router]);
 
@@ -79,15 +77,6 @@ export default function LoginPage() {
         } finally {
             setLoading(false);
         }
-    }
-
-    if (isChecking) {
-        return (
-            <div className="min-h-screen bg-bidcream flex items-center justify-center">
-                <div
-                    className="animate-spin h-10 w-10 border-4 border-[#002447]/20 border-t-[#002447] rounded-full"></div>
-            </div>
-        );
     }
 
     return (

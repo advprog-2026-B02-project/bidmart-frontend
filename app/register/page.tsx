@@ -14,7 +14,6 @@ export default function RegisterPage() {
     const [password, setPassword] = useState("");
     const [loading, setLoading] = useState(false);
     const [msg, setMsg] = useState<string | null>(null);
-    const [isSuccess, setIsSuccess] = useState(false);
 
     async function onSubmit(e: React.FormEvent) {
         e.preventDefault();
@@ -35,7 +34,7 @@ export default function RegisterPage() {
 
     return (
         <AuthShell title="Buat Akun Baru" subtitle="Bergabunglah dengan BidMart sekarang.">
-            {!isSuccess ? (
+            {(
                 <form onSubmit={onSubmit} className="space-y-6 animate-in fade-in duration-300">
 
                     {/* INPUT NAMA TAMPILAN */}
@@ -103,16 +102,6 @@ export default function RegisterPage() {
                         </button>
                     </div>
                 </form>
-            ) : (
-                <div className="space-y-6 animate-in fade-in zoom-in duration-300 text-center">
-                    <div
-                        className="rounded-xl bg-green-50 text-green-700 border border-green-100 px-4 py-4 text-sm font-medium leading-relaxed">
-                        {msg}
-                    </div>
-                    <button onClick={() => router.push("/login")} className={`${buttonCls} bg-[#002447] w-full`}>
-                        Menuju Halaman Login
-                    </button>
-                </div>
             )}
         </AuthShell>
     );

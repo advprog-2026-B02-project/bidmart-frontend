@@ -62,6 +62,7 @@ export default function MePage() {
                         {/* FOTO PROFIL / AVATAR */}
                         <div className="flex-shrink-0 w-16 h-16 rounded-full overflow-hidden bg-[#002447] text-white flex items-center justify-center text-2xl font-bold shadow-inner">
                             {user?.avatarUrl ? (
+                                // eslint-disable-next-line @next/next/no-img-element
                                 <img
                                     src={user.avatarUrl}
                                     alt="Avatar"
@@ -110,6 +111,14 @@ export default function MePage() {
                         disabled={!!msg}
                     >
                         Kelola 2FA
+                    </button>
+
+                    <button
+                        onClick={() => router.push("/me/sessions")}
+                        className="w-full rounded-xl py-4 text-lg font-bold text-[#002447] bg-[#002447]/10 hover:bg-[#002447]/20 transition-all shadow-sm active:scale-[0.98]"
+                        disabled={!!msg}
+                    >
+                        Kelola Sesi Aktif
                     </button>
 
                     <button
