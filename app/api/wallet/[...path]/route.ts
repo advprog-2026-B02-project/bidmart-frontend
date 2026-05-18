@@ -4,7 +4,7 @@ import { fetchInternal } from '@/lib/fetcher';
 async function handleRequest(request: NextRequest) {
     const pathname = request.nextUrl.pathname;
 
-    const endpoint = pathname.replace('/api/wallet', '');
+    const endpoint = `${pathname.replace('/api/wallet', '')}${request.nextUrl.search}`;
 
     const serviceUrl = process.env.WALLET_SERVICE_URL!;
 
