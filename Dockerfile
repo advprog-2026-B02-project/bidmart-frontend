@@ -9,19 +9,22 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-ENV NEXT_TELEMETRY_DISABLED=1
+ARG BIDDING_SERVICE_URL
+ARG NOTIFICATION_SERVICE_URL
+
+ENV BIDDING_SERVICE_URL=$BIDDING_SERVICE_URL \
+    NOTIFICATION_SERVICE_URL=$NOTIFICATION_SERVICE_URL
+
 RUN npm run build
 
 FROM node:20-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
-ENV NEXT_TELEMETRY_DISABLED=1
 
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs
-
-RUN mkdir .next
-RUN chown nextjs:nodejs .next
+RUN addgroup --system --gid 1001 nodejs && \
+    adduser --system --uid 1001 nextjs && \
+    mkdir .next && \
+    chown nextjs:nodejs .next
 
 COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
