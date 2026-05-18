@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { useAuctionWebSocket } from "@/hooks/useAuctionWebSocket";
@@ -20,7 +20,7 @@ export default function AuctionDetailPage() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
-    const fetchAuctionDetail = async () => {
+    const fetchAuctionDetail = useCallback(async () => {
         try {
             setIsLoading(true);
 
@@ -43,18 +43,22 @@ export default function AuctionDetailPage() {
                 const bidData = await bidRes.json();
                 setBidHistory(bidData.content || []);
             }
-        } catch (err: any) {
-            setMessage({ type: "error", text: err.message || "Terjadi kesalahan sistem." });
+        } catch (err: unknown) {
+            const error = err as Error;
+            setMessage({ type: "error", text: error.message || "Terjadi kesalahan sistem." });
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [id]);
 
     useEffect(() => {
         if (id) {
-            fetchAuctionDetail();
+            const timer = setTimeout(() => {
+                fetchAuctionDetail();
+            }, 0);
+            return () => clearTimeout(timer);
         }
-    }, [id]);
+    }, [id, fetchAuctionDetail]);
 
     useAuctionWebSocket({
         auctionId: id as string,
@@ -130,8 +134,9 @@ export default function AuctionDetailPage() {
             }
 
             setMessage({ type: "success", text: "Penawaran Anda berhasil ditempatkan!" });
-        } catch (err: any) {
-            setMessage({ type: "error", text: err.message || "Terjadi kesalahan." });
+        } catch (err: unknown) {
+            const error = err as Error
+            setMessage({ type: "error", text: error.message || "Terjadi kesalahan." });
         } finally {
             setIsSubmitting(false);
         }

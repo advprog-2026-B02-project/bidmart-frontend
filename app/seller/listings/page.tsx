@@ -25,8 +25,9 @@ export default function SellerDashboardPage() {
 
             setListings(Array.isArray(data) ? data : (data.content || []));
 
-        } catch (err: any) {
-            setError(err.message || "Terjadi kesalahan koneksi.");
+        } catch (err: unknown) {
+            const error = err as Error;
+            setError(error.message || "Terjadi kesalahan koneksi.");
         } finally {
             setIsLoading(false);
         }
@@ -34,7 +35,10 @@ export default function SellerDashboardPage() {
 
     useEffect(() => {
         if (user) {
-            fetchSellerListings();
+            const timer = setTimeout(() => {
+                fetchSellerListings();
+            }, 0);
+            return () => clearTimeout(timer);
         }
     }, [user]);
 
@@ -53,8 +57,9 @@ export default function SellerDashboardPage() {
             }
 
             await fetchSellerListings();
-        } catch (err: any) {
-            setError(err.message || "Terjadi kesalahan saat mengaktifkan lelang.");
+        } catch (err: unknown) {
+            const error = err as Error;
+            setError(error.message || "Terjadi kesalahan saat mengaktifkan lelang.");
         } finally {
             setActionLoadingId(null);
         }

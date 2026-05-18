@@ -27,8 +27,9 @@ export default function OrdersPage() {
 
             const data: OrderResponse = await res.json();
             setOrders(data.content || []);
-        } catch (err: any) {
-            setError(err.message || "Terjadi kesalahan koneksi.");
+        } catch (err: unknown) {
+            const error = err as Error;
+            setError(error.message || "Terjadi kesalahan koneksi.");
         } finally {
             setIsLoading(false);
         }
@@ -36,7 +37,10 @@ export default function OrdersPage() {
 
     useEffect(() => {
         if (user) {
-            fetchOrders();
+            const timer = setTimeout(() => {
+                fetchOrders();
+            }, 0);
+            return () => clearTimeout(timer);
         }
     }, [user, activeTab]);
 

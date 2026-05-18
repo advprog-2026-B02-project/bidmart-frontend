@@ -63,8 +63,9 @@ export default function RegisterPage() {
                 router.push("/login");
             }, 2000);
 
-        } catch (err: any) {
-            setError(err.message || "Terjadi kesalahan koneksi sistem.");
+        } catch (err: unknown) {
+            const error = err as Error;
+            setError(error.message || "Terjadi kesalahan koneksi sistem.");
         } finally {
             setIsLoading(false);
         }

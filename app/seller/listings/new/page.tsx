@@ -59,8 +59,9 @@ export default function NewListingPage() {
 
             router.push("/seller/listings");
             router.refresh();
-        } catch (err: any) {
-            setError(err.message || "Terjadi kesalahan koneksi ke server.");
+        } catch (err: unknown) {
+            const error = err as Error;
+            setError(error.message || "Terjadi kesalahan koneksi ke server.");
         } finally {
             setIsSubmitting(false);
         }

@@ -32,8 +32,9 @@ export default function DisputeOrderPage() {
                 if (user && data.buyerId !== user.id) {
                     throw new Error("Akses ditolak. Anda bukan pembeli dari transaksi ini.");
                 }
-            } catch (err: any) {
-                setError(err.message || "Gagal memuat detail pesanan.");
+            } catch (err: unknown) {
+                const error = err as Error;
+                setError(error.message || "Gagal memuat detail pesanan.");
             } finally {
                 setIsLoading(false);
             }
@@ -74,8 +75,9 @@ export default function DisputeOrderPage() {
 
             router.push("/orders");
             router.refresh();
-        } catch (err: any) {
-            setError(err.message || "Terjadi kesalahan sistem.");
+        } catch (err: unknown) {
+            const error = err as Error;
+            setError(error.message || "Terjadi kesalahan sistem.");
         } finally {
             setIsSubmitting(false);
         }

@@ -30,7 +30,7 @@ export async function getSession(): Promise<SessionData | null> {
 
     try {
         return JSON.parse(sessionCookie) as SessionData;
-    } catch (error) {
+    } catch {
         return null;
     }
 }

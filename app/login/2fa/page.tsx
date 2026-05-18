@@ -53,8 +53,9 @@ function TwoFactorAuthContent() {
 
             router.push("/");
             router.refresh();
-        } catch (err: any) {
-            setError(err.message || "Terjadi kesalahan sistem. Coba lagi.");
+        } catch (err: unknown) {
+            const error = err as Error;
+            setError(error.message || "Terjadi kesalahan sistem. Coba lagi.");
         } finally {
             setIsLoading(false);
         }

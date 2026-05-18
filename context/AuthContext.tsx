@@ -36,7 +36,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     };
 
     useEffect(() => {
-        checkSession();
+        const timer = setTimeout(() => {
+            checkSession();
+        }, 0);
+        return () => clearTimeout(timer);
     }, []);
 
     const login = (data: LoginSuccessResponse) => {

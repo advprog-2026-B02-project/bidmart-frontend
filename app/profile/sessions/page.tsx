@@ -32,8 +32,9 @@ export default function SessionManagementPage() {
 
             const data = await res.json();
             setSessions(data || []);
-        } catch (err: any) {
-            setError(err.message || "Terjadi kesalahan koneksi.");
+        } catch (err: unknown) {
+            const error = err as Error;
+            setError(error.message || "Terjadi kesalahan koneksi.");
         } finally {
             setIsLoading(false);
         }
@@ -41,7 +42,10 @@ export default function SessionManagementPage() {
 
     useEffect(() => {
         if (user) {
-            fetchSessions();
+            const timer = setTimeout(() => {
+                fetchSessions();
+            }, 0);
+            return () => clearTimeout(timer);
         }
     }, [user]);
 
@@ -59,8 +63,9 @@ export default function SessionManagementPage() {
             }
 
             setSessions((prev) => prev.filter((s) => s.id !== sessionId));
-        } catch (err: any) {
-            alert(err.message || "Gagal memproses permintaan.");
+        } catch (err: unknown) {
+            const error = err as Error;
+            alert(error.message || "Gagal memproses permintaan.");
         } finally {
             setRevokingId(null);
         }

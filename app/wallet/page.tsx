@@ -39,7 +39,10 @@ export default function WalletPage() {
 
     useEffect(() => {
         if (user) {
-            fetchWalletData();
+            const timer = setTimeout(() => {
+                fetchWalletData();
+            }, 0);
+            return () => clearTimeout(timer);
         }
     }, [user]);
 
@@ -67,8 +70,9 @@ export default function WalletPage() {
             setMessage({ type: "success", text: "Top-up saldo berhasil diproses!" });
             setTopUpAmount(0);
             fetchWalletData();
-        } catch (err: any) {
-            setMessage({ type: "error", text: err.message || "Terjadi kesalahan." });
+        } catch (err: unknown) {
+            const error = err as Error;
+            setMessage({ type: "error", text: error.message || "Terjadi kesalahan." });
         } finally {
             setIsLoading(false);
             setIsSubmitting(false);

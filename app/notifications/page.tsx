@@ -34,7 +34,10 @@ export default function NotificationsPage() {
 
     useEffect(() => {
         if (user) {
-            fetchNotifications();
+            const timer = setTimeout(() => {
+                fetchNotifications();
+            }, 0);
+            return () => clearTimeout(timer);
         }
     }, [user]);
 

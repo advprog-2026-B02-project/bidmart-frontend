@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useState } from "react";
 import SockJS from "sockjs-client";
 import { Client } from "@stomp/stompjs";
 import { BidResponse } from "@/types/bidding";
@@ -11,7 +11,7 @@ interface WebSocketArgs {
 }
 
 export function useAuctionWebSocket({ auctionId, onBidPlaced }: WebSocketArgs) {
-    const stompClientRef = useRef<Client | null>(null);
+    const [stompClient, setStompClient] = useState<Client | null>(null);
 
     useEffect(() => {
         if (!auctionId) return;
@@ -23,8 +23,6 @@ export function useAuctionWebSocket({ auctionId, onBidPlaced }: WebSocketArgs) {
         });
 
         client.onConnect = () => {
-            console.log(`[WebSocket] Sukses terhubung ke ruang lelang: ${auctionId}`);
-
             client.subscribe(`/topic/auctions/${auctionId}`, (message) => {
                 if (message.body) {
                     try {
@@ -37,20 +35,18 @@ export function useAuctionWebSocket({ auctionId, onBidPlaced }: WebSocketArgs) {
             });
         };
 
-        client.onStompError = (frame) => {
-            console.error("[WebSocket] STOMP Error:", frame.headers["message"]);
-        };
-
         client.activate();
-        stompClientRef.current = client;
+
+        const timer = setTimeout(() => {
+            setStompClient(client);
+        }, 0);
 
         return () => {
-            if (stompClientRef.current) {
-                stompClientRef.current.deactivate();
-                console.log(`[WebSocket] Memutuskan koneksi ruang lelang: ${auctionId}`);
-            }
+            clearTimeout(timer);
+            client.deactivate();
+            setStompClient(null);
         };
-    }, [auctionId]);
+    }, [auctionId, onBidPlaced]);
 
-    return stompClientRef.current;
+    return stompClient;
 }

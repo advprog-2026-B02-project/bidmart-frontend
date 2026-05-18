@@ -21,8 +21,9 @@ export default function HomePage() {
 
         const data = await res.json();
         setListings(data.content || []);
-      } catch (err: any) {
-        setError(err.message || "Terjadi kesalahan koneksi.");
+      } catch (err: unknown) {
+        const error = err as Error;
+        setError(error.message || "Terjadi kesalahan koneksi.");
       } finally {
         setIsLoading(false);
       }
