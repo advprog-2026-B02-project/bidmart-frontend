@@ -13,8 +13,10 @@ type LoginSuccessResponse = {
     user?: unknown;
 };
 
-function isPartialLoginResponse(data: any): data is PartialLoginResponse {
-    return Boolean(data?.requires2FA && data?.partialToken);
+function isPartialLoginResponse(data: unknown): data is PartialLoginResponse {
+    if (!data || typeof data !== "object") return false;
+    const response = data as Partial<Record<keyof PartialLoginResponse, unknown>>;
+    return response.requires2FA === true && typeof response.partialToken === "string";
 }
 
 async function parseError(res: Response | null) {
@@ -117,7 +119,7 @@ export async function register(email: string, password: string, displayName: str
         }
 
         return await res.text();
-    } catch (err: any) {
+    } catch (err: unknown) {
         if (!(err instanceof Error) || err.message === "Failed to fetch") {
             const cleanMsg = await parseError(null);
             throw new Error(cleanMsg);
@@ -153,7 +155,7 @@ export async function login(email: string, password: string) {
 
         setTokens(accessToken, refreshToken);
         return data;
-    } catch (err: any) {
+    } catch (err: unknown) {
         if (!(err instanceof Error) || err.message === "Failed to fetch") {
             const cleanMsg = await parseError(null);
             throw new Error(cleanMsg);
@@ -185,7 +187,7 @@ export async function verifyTwoFactor(partialToken: string, code: string): Promi
 
         setTokens(accessToken, refreshToken);
         return data;
-    } catch (err: any) {
+    } catch (err: unknown) {
         if (!(err instanceof Error) || err.message === "Failed to fetch") {
             const cleanMsg = await parseError(null);
             throw new Error(cleanMsg);
@@ -217,7 +219,7 @@ export async function me() {
         }
 
         return await res.json();
-    } catch (err: any) {
+    } catch (err: unknown) {
         if (!(err instanceof Error) || err.message === "Failed to fetch") {
             const cleanMsg = await parseError(null);
             throw new Error(cleanMsg);
@@ -238,7 +240,7 @@ export async function verifyEmail(token: string) {
         }
 
         return await res.text();
-    } catch (err: any) {
+    } catch (err: unknown) {
         if (!(err instanceof Error) || err.message === "Failed to fetch") {
             const cleanMsg = await parseError(null);
             throw new Error(cleanMsg);
@@ -261,7 +263,7 @@ export async function forgotPassword(email: string) {
         }
 
         return await res.text();
-    } catch (err: any) {
+    } catch (err: unknown) {
         if (!(err instanceof Error) || err.message === "Failed to fetch") {
             const cleanMsg = await parseError(null);
             throw new Error(cleanMsg);
@@ -284,7 +286,7 @@ export async function resetPassword(token: string, newPass: string) {
         }
 
         return await res.text();
-    } catch (err: any) {
+    } catch (err: unknown) {
         if (!(err instanceof Error) || err.message === "Failed to fetch") {
             const cleanMsg = await parseError(null);
             throw new Error(cleanMsg);
@@ -305,7 +307,7 @@ export async function validateResetToken(token: string) {
         }
 
         return true;
-    } catch (err: any) {
+    } catch (err: unknown) {
         if (!(err instanceof Error) || err.message === "Failed to fetch") {
             const cleanMsg = await parseError(null);
             throw new Error(cleanMsg);
@@ -336,7 +338,7 @@ export async function setupTwoFactor(method: "TOTP") {
         }
 
         return await res.json();
-    } catch (err: any) {
+    } catch (err: unknown) {
         if (!(err instanceof Error) || err.message === "Failed to fetch") {
             const cleanMsg = await parseError(null);
             throw new Error(cleanMsg);
@@ -367,7 +369,7 @@ export async function confirmTwoFactor(code: string) {
         }
 
         return await res.json();
-    } catch (err: any) {
+    } catch (err: unknown) {
         if (!(err instanceof Error) || err.message === "Failed to fetch") {
             const cleanMsg = await parseError(null);
             throw new Error(cleanMsg);
@@ -398,7 +400,7 @@ export async function disableTwoFactor(password: string) {
         }
 
         return await res.json();
-    } catch (err: any) {
+    } catch (err: unknown) {
         if (!(err instanceof Error) || err.message === "Failed to fetch") {
             const cleanMsg = await parseError(null);
             throw new Error(cleanMsg);
@@ -430,7 +432,7 @@ export async function updateProfile(displayName: string, avatarUrl: string) {
         }
 
         return await res.json();
-    } catch (err: any) {
+    } catch (err: unknown) {
         if (!(err instanceof Error) || err.message === "Failed to fetch") {
             const cleanMsg = await parseError(null);
             throw new Error(cleanMsg);
