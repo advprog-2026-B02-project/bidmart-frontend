@@ -1,25 +1,31 @@
 import type { Metadata } from "next";
-import React from "react";
-import { Plus_Jakarta_Sans } from "next/font/google";
+import { Inter } from "next/font/google";
 import "./globals.css";
+import { AuthProvider } from "@/context/AuthContext";
+import Navbar from "@/components/Navbar";
+import NotificationListener from "@/components/NotificationListener";
 
-const plusJakarta = Plus_Jakarta_Sans({
-    subsets: ["latin"],
-    weight: ["300", "400", "500", "600", "700"],
-    variable: "--font-plus-jakarta",
-});
+const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-    title: "BidMart",
-    description: "BidMart Auth",
+  title: "BidMart - Real-time Auction Platform",
+  description: "Platform lelang kompetitif secara real-time",
 };
 
 export default function RootLayout({
-                                       children,
-                                   }: Readonly<{ children: React.ReactNode }>) {
-    return (
-        <html lang="id" className={plusJakarta.variable}>
-        <body className="font-sans">{children}</body>
-        </html>
-    );
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
+  return (
+    <html lang="id">
+      <body className={`${inter.className} bg-gray-50 text-gray-900 antialiased`}>
+        <AuthProvider>
+          <Navbar />
+          <NotificationListener />
+          {children}
+        </AuthProvider>
+      </body>
+    </html>
+  );
 }

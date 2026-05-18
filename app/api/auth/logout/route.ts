@@ -14,7 +14,7 @@ export async function POST() {
         await clearSession();
 
         return NextResponse.json({ message: "Logout berhasil" }, { status: 200 });
-    } catch (error) {
+    } catch {
         return NextResponse.json({ error: 'Gagal logout' }, { status: 500 });
     }
 }

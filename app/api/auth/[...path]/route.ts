@@ -8,7 +8,18 @@ async function handleRequest(request: NextRequest) {
 
     const serviceUrl = process.env.AUTH_SERVICE_URL!;
 
-    const init: RequestInit = { method: request.method };
+    const headers: Record<string, string> = {};
+    request.headers.forEach((value, key) => {
+        if (key.toLowerCase() !== 'host') {
+            headers[key] = value;
+        }
+    });
+
+    const init: RequestInit = {
+        method: request.method,
+        headers: headers
+    };
+
     if (request.method !== 'GET' && request.method !== 'HEAD') {
         init.body = await request.text();
     }
@@ -26,7 +37,14 @@ async function handleRequest(request: NextRequest) {
         responseBody = responseText;
     }
 
-    return NextResponse.json(responseBody, { status: response.status });
+    const nextResponse = NextResponse.json(responseBody, { status: response.status });
+
+    const setCookieHeader = response.headers.get('set-cookie');
+    if (setCookieHeader) {
+        nextResponse.headers.set('Set-Cookie', setCookieHeader);
+    }
+
+    return nextResponse;
 }
 
 export const GET = handleRequest;

@@ -55,6 +55,9 @@ jobs:
           file: ./Dockerfile
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/bidmart-frontend:staging
+          build-args: |
+            BIDDING_SERVICE_URL=http://bidmart-bidding-service:8082
+            NOTIFICATION_SERVICE_URL=http://bidmart-notification-service:8085
 
   deploy-production:
     name: Build & Push to Docker Hub (Production)
@@ -82,3 +85,6 @@ jobs:
           file: ./Dockerfile
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/bidmart-frontend:latest
+          build-args: |
+            BIDDING_SERVICE_URL=http://bidmart-bidding-service:8082
+            NOTIFICATION_SERVICE_URL=http://bidmart-notification-service:8085

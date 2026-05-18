@@ -8,7 +8,18 @@ async function handleRequest(request: NextRequest) {
 
     const serviceUrl = process.env.NOTIFICATION_SERVICE_URL!;
 
-    const init: RequestInit = { method: request.method };
+    const headers: Record<string, string> = {};
+    request.headers.forEach((value, key) => {
+        if (key.toLowerCase() !== 'host') {
+            headers[key] = value;
+        }
+    });
+
+    const init: RequestInit = {
+        method: request.method,
+        headers: headers
+    };
+
     if (request.method !== 'GET' && request.method !== 'HEAD') {
         init.body = await request.text();
     }

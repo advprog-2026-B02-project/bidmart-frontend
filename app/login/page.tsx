@@ -1,199 +1,128 @@
 "use client";
 
-import {useState, useEffect} from "react";
+import React, { useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
-import {useRouter} from "next/navigation";
-import AuthShell from "@/components/AuthShell";
-import {buttonCls, inputCls} from "@/components/ui";
-import {login as apiLogin, verifyTwoFactor as apiVerifyTwoFactor} from "@/lib/api";
-
-type PartialLoginResponse = {
-    partialToken: string;
-    requires2FA: boolean;
-    expiresIn: number;
-};
-
-function isPartialResponse(data: any): data is PartialLoginResponse {
-    return Boolean(data?.requires2FA && data?.partialToken);
-}
+import { useAuth } from "@/context/AuthContext";
 
 export default function LoginPage() {
-    const [email, setEmail] = useState("");
-    const [pass, setPass] = useState("");
-    const [loading, setLoading] = useState(false);
-    const [isChecking, setIsChecking] = useState(true);
-    const [msg, setMsg] = useState<string | null>(null);
-    const [partialToken, setPartialToken] = useState<string | null>(null);
-    const [twoFactorCode, setTwoFactorCode] = useState("");
+    const { login } = useAuth();
     const router = useRouter();
 
-    useEffect(() => {
-        const token = localStorage.getItem("accessToken");
-        if (token) {
-            router.replace("/me");
-        } else {
-            setIsChecking(false);
-        }
-    }, [router]);
+    const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
-    async function onSubmit(e: React.FormEvent) {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        setMsg(null);
-        setLoading(true);
+        setError(null);
+        setIsLoading(true);
 
         try {
-            const result = await apiLogin(email, pass);
-            if (isPartialResponse(result)) {
-                setPartialToken(result.partialToken);
-                setMsg("Masukkan kode TOTP dari authenticator untuk melanjutkan.");
+            const res = await fetch("/api/auth/login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email, password }),
+            });
+
+            const data = await res.json();
+
+            if (!res.ok) {
+                throw new Error(data.error || "Alamat email atau kata sandi salah.");
+            }
+
+            if (data.requires2FA) {
+                console.log("[Auth] Akun terproteksi 2FA, mengalihkan ke verifikasi...");
+                router.push(`/login/2fa?token=${data.partialToken}`);
                 return;
             }
 
-            router.push("/me");
+            login(data.user);
+            router.push("/");
+            router.refresh();
+
         } catch (err: unknown) {
-            const message =
-                err instanceof Error ? err.message : "Terjadi kesalahan saat masuk.";
-            setMsg(message);
+            const error = err as Error;
+            setError(error.message || "Terjadi kesalahan koneksi sistem.");
         } finally {
-            setLoading(false);
+            setIsLoading(false);
         }
-    }
-
-    async function onVerifyTwoFactor(e: React.FormEvent) {
-        e.preventDefault();
-        if (!partialToken) {
-            setMsg("Sesi 2FA tidak ditemukan. Silakan login ulang.");
-            return;
-        }
-
-        setMsg(null);
-        setLoading(true);
-
-        try {
-            await apiVerifyTwoFactor(partialToken, twoFactorCode);
-            router.push("/me");
-        } catch (err: unknown) {
-            const message =
-                err instanceof Error ? err.message : "Verifikasi 2FA gagal.";
-            setMsg(message);
-        } finally {
-            setLoading(false);
-        }
-    }
-
-    if (isChecking) {
-        return (
-            <div className="min-h-screen bg-bidcream flex items-center justify-center">
-                <div
-                    className="animate-spin h-10 w-10 border-4 border-[#002447]/20 border-t-[#002447] rounded-full"></div>
-            </div>
-        );
-    }
+    };
 
     return (
-        <AuthShell title="Masuk" subtitle="Selamat datang kembali di BidMart">
-            {partialToken ? (
-                <form onSubmit={onVerifyTwoFactor} className="space-y-6">
-                    <div className="rounded-xl bg-blue-50 border border-blue-100 px-4 py-3 text-sm text-blue-700">
-                        Verifikasi 2FA TOTP diperlukan sebelum melanjutkan login.
+        <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4 sm:px-6 lg:px-8">
+            <div className="w-full max-w-md space-y-8 bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
+                <div>
+                    <h2 className="text-center text-3xl font-black tracking-tight text-emerald-600">
+                        BidMart
+                    </h2>
+                    <p className="mt-2 text-center text-sm text-gray-500">
+                        Masuk untuk mulai mengajukan penawaran lelang
+                    </p>
+                </div>
+
+                {error && (
+                    <div className="rounded-xl bg-red-50 p-4 text-sm font-semibold text-red-600 border border-red-100">
+                        {error}
                     </div>
+                )}
 
-                    <div>
-                        <label className="block text-lg font-medium mb-2 text-[#002447]">Kode Verifikasi</label>
-                        <input
-                            className={inputCls}
-                            placeholder="Masukkan 6 digit kode"
-                            value={twoFactorCode}
-                            onChange={(e) => setTwoFactorCode(e.target.value)}
-                            type="text"
-                            inputMode="numeric"
-                            required
-                            disabled={loading}
-                        />
-                    </div>
-
-                    <button
-                        disabled={loading}
-                        className={`${buttonCls} ${loading ? 'opacity-70 cursor-not-allowed' : ''}`}
-                    >
-                        {loading ? "Memverifikasi..." : "Verifikasi 2FA"}
-                    </button>
-
-                    <button
-                        type="button"
-                        className="w-full rounded-xl py-3 text-sm font-semibold text-[#002447] bg-[#002447]/10 hover:bg-[#002447]/20"
-                        onClick={() => {
-                            setPartialToken(null);
-                            setTwoFactorCode("");
-                            setMsg(null);
-                        }}
-                    >
-                        Kembali ke Form Login
-                    </button>
-
-                    {msg && (
-                        <div
-                            className="rounded-xl bg-red-50 border border-red-100 px-4 py-3 text-sm text-red-600 animate-in fade-in slide-in-from-top-1">
-                            {msg}
+                <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+                    <div className="space-y-4 rounded-md shadow-sm">
+                        <div>
+                            <label htmlFor="email-address" className="block text-sm font-medium text-gray-700 mb-1">
+                                Alamat Email
+                            </label>
+                            <input
+                                id="email-address"
+                                type="email"
+                                required
+                                disabled={isLoading}
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                className="block w-full px-3 py-2.5 border border-gray-300 rounded-lg placeholder-gray-400 text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm"
+                                placeholder="nama@email.com"
+                            />
                         </div>
-                    )}
-                </form>
-            ) : (
-                <form onSubmit={onSubmit} className="space-y-6">
-                    <div>
-                        <label className="block text-lg font-medium mb-2 text-[#002447]">Email</label>
-                        <input
-                            className={inputCls}
-                            placeholder="Masukkan email Anda"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            type="email"
-                            required
-                            disabled={loading}
-                        />
-                    </div>
 
-                    <div>
-                        <label className="block text-lg font-medium mb-2 text-[#002447]">Kata Sandi</label>
-                        <input
-                            className={inputCls}
-                            placeholder="Masukkan kata sandi Anda"
-                            value={pass}
-                            onChange={(e) => setPass(e.target.value)}
-                            type="password"
-                            required
-                            disabled={loading}
-                        />
-                    </div>
-
-                    <div className="flex justify-end mt-1">
-                        <Link href="/auth/forgot" className="text-sm text-sky-600 hover:underline font-medium">
-                            Lupa kata sandi?
-                        </Link>
-                    </div>
-
-                    <button
-                        disabled={loading}
-                        className={`${buttonCls} ${loading ? 'opacity-70 cursor-not-allowed' : ''}`}
-                    >
-                        {loading ? "Memproses..." : "Masuk"}
-                    </button>
-
-                    {msg && (
-                        <div
-                            className="rounded-xl bg-red-50 border border-red-100 px-4 py-3 text-sm text-red-600 animate-in fade-in slide-in-from-top-1">
-                            {msg}
+                        <div>
+                            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+                                Kata Sandi
+                            </label>
+                            <input
+                                id="password"
+                                type="password"
+                                required
+                                disabled={isLoading}
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                className="block w-full px-3 py-2.5 border border-gray-300 rounded-lg placeholder-gray-400 text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm"
+                                placeholder="••••••••"
+                            />
                         </div>
-                    )}
+                    </div>
 
-                    <div className="pt-6 border-t border-black/5 text-center text-base text-black/60">
-                        Belum punya akun?{" "}
-                        <Link className="text-sky-600 font-medium hover:underline" href="/register">
-                            Daftar akun disini!
-                        </Link>
+                    <div>
+                        <button
+                            type="submit"
+                            disabled={isLoading}
+                            className="w-full flex justify-center py-2.5 px-4 border border-transparent text-sm font-bold rounded-lg text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 disabled:opacity-50 transition-colors"
+                        >
+                            {isLoading ? "Membuka Sesi..." : "Masuk ke Akun"}
+                        </button>
+                    </div>
+
+                    <div className="text-center mt-4">
+                        <p className="text-xs text-gray-600">
+                            Belum punya akun?{" "}
+                            <Link href="/register" className="font-bold text-emerald-600 hover:text-emerald-700 transition-colors">
+                                Daftar baru di sini
+                            </Link>
+                        </p>
                     </div>
                 </form>
-            )}
-        </AuthShell>
+            </div>
+        </div>
     );
 }
