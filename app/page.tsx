@@ -1,11 +1,11 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { ListingSummary } from "@/types/catalog";
+import { CatalogItem } from "@/types/catalog";
 import AuctionCard from "@/components/AuctionCard";
 
 export default function HomePage() {
-  const [listings, setListings] = useState<ListingSummary[]>([]);
+  const [listings, setListings] = useState<CatalogItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 

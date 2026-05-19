@@ -2,10 +2,10 @@
 
 import React from "react";
 import Link from "next/link";
-import { ListingSummary } from "@/types/catalog";
+import { CatalogItem } from "@/types/catalog";
 
 interface AuctionCardProps {
-    listing: ListingSummary;
+    listing: CatalogItem;
 }
 
 export default function AuctionCard({ listing }: AuctionCardProps) {
