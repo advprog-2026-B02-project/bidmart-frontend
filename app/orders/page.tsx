@@ -87,13 +87,12 @@ export default function OrdersPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
  
-  const loadOrders = useCallback(async (role: OrderRole) => {
-    setLoading(true);
-    setError(null);
+  const refreshOrders = useCallback(async (role: OrderRole) => {
     try {
       const res = await fetchOrders(role);
       // Normalisasi paginated response; fallback ke array kosong jika content null
       setOrders(res.content ?? []);
+      setError(null);
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Terjadi kesalahan yang tidak diketahui."
@@ -106,21 +105,53 @@ export default function OrdersPage() {
  
   // Load saat tab berubah atau auth selesai
   useEffect(() => {
-    if (!authLoading) {
-      loadOrders(activeTab);
+    if (authLoading) {
+      return;
     }
-  }, [activeTab, authLoading, loadOrders]);
+
+    let cancelled = false;
+
+    async function run() {
+      try {
+        const res = await fetchOrders(activeTab);
+
+        if (cancelled) return;
+
+        setOrders(res.content ?? []);
+        setError(null);
+      } catch (err) {
+        if (cancelled) return;
+
+        setError(
+          err instanceof Error ? err.message : "Terjadi kesalahan yang tidak diketahui."
+        );
+        setOrders([]);
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    }
+
+    void run();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [activeTab, authLoading]);
  
   // Refresh satu kartu tanpa reload seluruh list
   function handleActionSuccess(orderId: string) {
     // Re-fetch seluruh list untuk tab saat ini agar status ter-update
     // (data list tidak punya detail shipping, cukup refresh status)
-    loadOrders(activeTab);
+    void refreshOrders(activeTab);
     void orderId;
   }
  
   function handleTabChange(tab: OrderRole) {
     if (tab === activeTab) return;
+    setLoading(true);
+    setError(null);
     setActiveTab(tab);
   }
  
@@ -195,7 +226,11 @@ export default function OrdersPage() {
           ) : error ? (
             <OrdersError
               message={error}
-              onRetry={() => loadOrders(activeTab)}
+              onRetry={() => {
+                setLoading(true);
+                setError(null);
+                void refreshOrders(activeTab);
+              }}
             />
           ) : orders.length === 0 ? (
             <EmptyOrders role={activeTab} />
