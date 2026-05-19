@@ -56,8 +56,12 @@ jobs:
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/bidmart-frontend:staging
           build-args: |
-            BIDDING_SERVICE_URL=http://bidmart-bidding-service:8082
-            NOTIFICATION_SERVICE_URL=http://bidmart-notification-service:8085
+            AUTH_SERVICE_URL=http://auth-service:8081
+            BIDDING_SERVICE_URL=http://bidding-service:8082
+            CATALOG_SERVICE_URL=http://catalog-service:8083
+            WALLET_SERVICE_URL=http://wallet-service:8084
+            ORDER_SERVICE_URL=http://order-service:8085
+            NOTIFICATION_SERVICE_URL=http://notification-service:8086
 
   deploy-production:
     name: Build & Push to Docker Hub (Production)
@@ -86,5 +90,9 @@ jobs:
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/bidmart-frontend:latest
           build-args: |
-            BIDDING_SERVICE_URL=http://bidmart-bidding-service:8082
-            NOTIFICATION_SERVICE_URL=http://bidmart-notification-service:8085
+            AUTH_SERVICE_URL=http://auth-service:8081
+            BIDDING_SERVICE_URL=http://bidding-service:8082
+            CATALOG_SERVICE_URL=http://catalog-service:8083
+            WALLET_SERVICE_URL=http://wallet-service:8084
+            ORDER_SERVICE_URL=http://order-service:8085
+            NOTIFICATION_SERVICE_URL=http://notification-service:8086
