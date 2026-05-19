@@ -4,7 +4,13 @@ import { fetchInternal } from '@/lib/fetcher';
 async function handleRequest(request: NextRequest) {
     const pathname = request.nextUrl.pathname;
 
-    const endpoint = pathname.replace('/api', '');
+    let endpoint = '';
+    
+    if (pathname === '/api/auth/me') {
+        endpoint = '/users/me'; 
+    } else {
+        endpoint = pathname.replace('/api/auth', '/auth');
+    }
 
     const serviceUrl = process.env.AUTH_SERVICE_URL!;
 
