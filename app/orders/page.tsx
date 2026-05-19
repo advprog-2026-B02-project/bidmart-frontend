@@ -1,193 +1,216 @@
 "use client";
-
-import React, { useEffect, useState } from "react";
+ 
+import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { Order, OrderResponse, OrderStatus } from "@/types/order";
-import Link from "next/link";
+import { fetchOrders } from "@/lib/order.api";
+import type { OrderSummary, OrderRole } from "@/types/order";
+import OrderCard from "@/components/OrderCard";
+ 
 
+function OrderSkeleton() {
+  return (
+    <div className="animate-pulse rounded-2xl border border-gray-100 bg-white shadow-sm">
+      <div className="flex items-start justify-between border-b border-gray-50 px-5 py-4">
+        <div className="space-y-2">
+          <div className="h-3 w-24 rounded bg-gray-100" />
+          <div className="h-4 w-56 rounded bg-gray-100" />
+        </div>
+        <div className="h-5 w-24 rounded-full bg-gray-100" />
+      </div>
+      <div className="px-5 py-4">
+        <div className="mb-3 grid grid-cols-2 gap-3">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="space-y-1">
+              <div className="h-3 w-16 rounded bg-gray-100" />
+              <div className="h-4 w-28 rounded bg-gray-100" />
+            </div>
+          ))}
+        </div>
+        <div className="h-10 rounded-xl bg-gray-100" />
+      </div>
+    </div>
+  );
+}
+
+function EmptyOrders({ role }: { role: OrderRole }) {
+  return (
+    <div className="flex flex-col items-center justify-center py-20 text-center">
+      <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-[#f6f4ef]">
+        <svg
+          className="h-8 w-8 text-gray-400"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={1.5}
+            d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+          />
+        </svg>
+      </div>
+      <p className="text-base font-medium text-gray-500">
+        {role === "BUYER"
+          ? "Kamu belum punya pesanan sebagai pembeli."
+          : "Kamu belum punya pesanan sebagai penjual."}
+      </p>
+      <p className="mt-1 text-sm text-gray-400">
+        Pesanan akan muncul di sini setelah kamu memenangkan lelang.
+      </p>
+    </div>
+  );
+}
+ 
+function OrdersError({ message, onRetry }: { message: string; onRetry: () => void }) {
+  return (
+    <div className="rounded-2xl bg-red-50 px-6 py-8 text-center">
+      <p className="mb-1 font-semibold text-red-600">Gagal memuat pesanan</p>
+      <p className="mb-4 text-sm text-red-500">{message}</p>
+      <button
+        onClick={onRetry}
+        className="rounded-lg bg-[#002447] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#003b70]"
+      >
+        Coba Lagi
+      </button>
+    </div>
+  );
+}
+ 
 export default function OrdersPage() {
-    const { user, isLoading: authLoading } = useAuth();
-
-    const [orders, setOrders] = useState<Order[]>([]);
-    const [activeTab, setActiveTab] = useState<'BUYER' | 'SELLER'>('BUYER');
-    const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
-
-    const fetchOrders = async () => {
-        try {
-            setIsLoading(true);
-            setError(null);
-
-            const url = `/api/orders?role=${activeTab}&page=0&size=20`;
-            const res = await fetch(url);
-
-            if (!res.ok) {
-                throw new Error("Gagal memuat daftar transaksi pesanan.");
-            }
-
-            const data: OrderResponse = await res.json();
-            setOrders(data.content || []);
-        } catch (err: unknown) {
-            const error = err as Error;
-            setError(error.message || "Terjadi kesalahan koneksi.");
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    useEffect(() => {
-        if (user) {
-            const timer = setTimeout(() => {
-                fetchOrders();
-            }, 0);
-            return () => clearTimeout(timer);
-        }
-    }, [user, activeTab]);
-
-    const handleUpdateStatus = async (orderId: string, action: "ship" | "receive") => {
-        try {
-            const endpoint = `/api/orders/${orderId}/${action}`;
-            const res = await fetch(endpoint, {
-                method: "PUT",
-                headers: { "Content-Type": "application/json" },
-                body: action === "ship" ? JSON.stringify({ courier: "JNT Express", trackingNumber: "JNT987654321" }) : undefined
-            });
-
-            if (res.ok) {
-                fetchOrders();
-            }
-        } catch (err) {
-            console.error(`Gagal memproses status ${action}:`, err);
-        }
-    };
-
-    const formatPrice = (price: number) => {
-        return new Intl.NumberFormat("id-ID", {
-            style: "currency",
-            currency: "IDR",
-            minimumFractionDigits: 0,
-        }).format(price);
-    };
-
-    const getStatusStyle = (status: OrderStatus) => {
-        switch (status) {
-            case "CREATED": return "bg-blue-50 text-blue-700 ring-1 ring-blue-600/20";
-            case "PACKAGED": return "bg-yellow-50 text-yellow-700 ring-1 ring-yellow-600/20";
-            case "SHIPPED": return "bg-indigo-50 text-indigo-700 ring-1 ring-indigo-600/20";
-            case "COMPLETED": return "bg-green-50 text-green-700 ring-1 ring-green-600/20";
-            case "DISPUTED": return "bg-red-50 text-red-700 ring-1 ring-red-600/20";
-            case "RESOLVED": return "bg-gray-100 text-gray-700";
-            default: return "bg-bidcream text-gray-600";
-        }
-    };
-
-    if (authLoading || isLoading) {
-        return <div className="text-center py-20 text-sm text-gray-500 animate-pulse">Memuat data pesanan...</div>;
+  const { user, isLoading: authLoading } = useAuth();
+ 
+  const isSeller = user?.roles?.includes("SELLER") ?? false;
+ 
+  const [activeTab, setActiveTab] = useState<OrderRole>("BUYER");
+  const [orders, setOrders] = useState<OrderSummary[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+ 
+  const loadOrders = useCallback(async (role: OrderRole) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetchOrders(role);
+      // Normalisasi paginated response; fallback ke array kosong jika content null
+      setOrders(res.content ?? []);
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Terjadi kesalahan yang tidak diketahui."
+      );
+      setOrders([]);
+    } finally {
+      setLoading(false);
     }
-
-    if (!user) {
-        return <div className="text-center py-20 text-sm text-red-500">Silakan login untuk memantau transaksi pesanan Anda.</div>;
+  }, []);
+ 
+  // Load saat tab berubah atau auth selesai
+  useEffect(() => {
+    if (!authLoading) {
+      loadOrders(activeTab);
     }
+  }, [activeTab, authLoading, loadOrders]);
+ 
+  // Refresh satu kartu tanpa reload seluruh list
+  function handleActionSuccess(orderId: string) {
+    // Re-fetch seluruh list untuk tab saat ini agar status ter-update
+    // (data list tidak punya detail shipping, cukup refresh status)
+    loadOrders(activeTab);
+    void orderId;
+  }
+ 
+  function handleTabChange(tab: OrderRole) {
+    if (tab === activeTab) return;
+    setActiveTab(tab);
+  }
+ 
 
+  if (authLoading) {
     return (
-        <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10">
-            <div className="border-b border-gray-100 pb-4 mb-6">
-                <h1 className="text-2xl font-black tracking-tight text-gray-900 sm:text-3xl">Transaksi & Pesanan</h1>
-                <p className="text-sm text-gray-500 mt-1">Pantau status pengiriman barang lelang yang Anda menangkan atau jual.</p>
-            </div>
-
-            {/* TAB TOGGLE PERAN */}
-            <div className="flex gap-4 border-b border-gray-200 mb-8 text-sm font-semibold">
-                <button
-                    onClick={() => setActiveTab('BUYER')}
-                    className={`pb-3 transition-all ${activeTab === 'BUYER' ? "border-b-2 border-bidnavy text-bidnavy font-bold" : "text-gray-400 hover:text-gray-600"}`}
-                >
-                    Pesanan Saya (Pembeli)
-                </button>
-                {user.roles.includes('SELLER') && (
-                    <button
-                        onClick={() => setActiveTab('SELLER')}
-                        className={`pb-3 transition-all ${activeTab === 'SELLER' ? "border-b-2 border-bidnavy text-bidnavy font-bold" : "text-gray-400 hover:text-gray-600"}`}
-                    >
-                        Penjualan Saya (Penjual)
-                    </button>
-                )}
-            </div>
-
-            {error && <div className="rounded-xl bg-red-50 p-4 text-xs font-bold text-red-600 border border-red-100 mb-6">{error}</div>}
-
-            {/* DAFTAR PESANAN */}
-            {orders.length === 0 ? (
-                <div className="text-center py-20 bg-white rounded-2xl border border-gray-100 shadow-sm text-sm text-gray-400">
-                    Tidak ada riwayat transaksi pesanan pada menu ini.
-                </div>
-            ) : (
-                <div className="space-y-4">
-                    {orders.map((order) => (
-                        <div key={order.id} className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex flex-col md:flex-row md:items-center md:justify-between gap-6">
-
-                            {/* Info Produk & Detil Flat Berdasarkan Model Java Lu */}
-                            <div className="space-y-2 flex-1">
-                                <div className="flex items-center gap-3">
-                                    <span className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs font-bold uppercase tracking-wide ${getStatusStyle(order.status)}`}>
-                                        {order.status}
-                                    </span>
-                                    <span className="text-[11px] font-mono text-gray-400">ID Order: #{order.id.slice(0, 8)}</span>
-                                </div>
-
-                                <h3 className="text-base font-bold text-gray-900">{order.listingTitle}</h3>
-
-                                <div className="text-xs text-gray-500 flex flex-wrap gap-x-6 gap-y-1">
-                                    {/* Menggunakan order.totalAmount sesuai properti Long model Java lu */}
-                                    <p>Total Transaksi: <span className="font-bold text-gray-900">{formatPrice(order.totalAmount)}</span></p>
-                                    {/* Menggunakan flat property sellerDisplayName / buyerDisplayName */}
-                                    <p>{activeTab === 'BUYER' ? `Penjual: ${order.sellerDisplayName}` : `Pembeli: ${order.buyerDisplayName}`}</p>
-                                    <p>Tanggal Transaksi: {new Date(order.createdAt).toLocaleDateString("id-ID")}</p>
-                                </div>
-
-                                {/* Tampilkan info kurir jika barang sudah dikirim */}
-                                {order.trackingNumber && (
-                                    <div className="mt-2 text-xs bg-bidcream border border-gray-100 rounded-lg p-2.5 max-w-md text-gray-600">
-                                        🚚 <span className="font-bold text-gray-900">{order.courier}</span> - Resi: <span className="font-mono bg-white px-1 py-0.5 border rounded">{order.trackingNumber}</span>
-                                    </div>
-                                )}
-                            </div>
-
-                            {/* Bagian Kanan: Aksi Penanganan Alur Sesi */}
-                            <div className="flex items-center gap-3 md:self-center">
-                                {/* AKSI PENJUAL */}
-                                {activeTab === 'SELLER' && order.status === 'CREATED' && (
-                                    <button
-                                        onClick={() => handleUpdateStatus(order.id, "ship")}
-                                        className="rounded-lg bg-bidnavy px-4 py-2 text-xs font-bold text-white hover:bg-bidnavy2 shadow-sm transition-colors"
-                                    >
-                                        Kirim Barang (Input Resi)
-                                    </button>
-                                )}
-
-                                {/* AKSI PEMBELI */}
-                                {activeTab === 'BUYER' && order.status === 'SHIPPED' && (
-                                    <>
-                                        <button
-                                            onClick={() => handleUpdateStatus(order.id, "receive")}
-                                            className="rounded-lg bg-bidnavy px-4 py-2 text-xs font-bold text-white hover:bg-bidnavy2 shadow-sm transition-colors"
-                                        >
-                                            Konfirmasi Selesai
-                                        </button>
-                                        <Link
-                                            href={`/orders/${order.id}/dispute`}
-                                            className="rounded-lg border border-red-200 px-3 py-2 text-xs font-semibold text-red-600 hover:bg-red-50 transition-colors text-center"
-                                        >
-                                            Ajukan Komplain
-                                        </Link>
-                                    </>
-                                )}
-                            </div>
-
-                        </div>
-                    ))}
-                </div>
-            )}
-        </main>
+      <main className="min-h-screen bg-[#f6f4ef] px-4 py-8 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-3xl space-y-4">
+          {[...Array(3)].map((_, i) => (
+            <OrderSkeleton key={i} />
+          ))}
+        </div>
+      </main>
     );
+  }
+ 
+  if (!user) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-[#f6f4ef]">
+        <p className="text-gray-500">Silakan login untuk melihat pesanan kamu.</p>
+      </main>
+    );
+  }
+ 
+  return (
+    <main className="min-h-screen bg-[#f6f4ef] px-4 py-8 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-3xl">
+        {/* Page title */}
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold text-[#002447]">Pesanan Saya</h1>
+          <p className="mt-1 text-sm text-gray-500">
+            Pantau semua pesanan dan statusnya di sini.
+          </p>
+        </div>
+ 
+        {/* Tabs */}
+        <div className="mb-6 flex gap-1 rounded-2xl border border-gray-100 bg-white p-1 shadow-sm">
+          <button
+            onClick={() => handleTabChange("BUYER")}
+            className={`flex-1 rounded-xl py-2 text-sm font-semibold transition-colors ${
+              activeTab === "BUYER"
+                ? "bg-[#002447] text-white"
+                : "text-gray-500 hover:bg-gray-50"
+            }`}
+          >
+            Sebagai Pembeli
+          </button>
+ 
+          {/* Tab SELLER hanya tampil jika user memiliki role SELLER */}
+          {isSeller && (
+            <button
+              onClick={() => handleTabChange("SELLER")}
+              className={`flex-1 rounded-xl py-2 text-sm font-semibold transition-colors ${
+                activeTab === "SELLER"
+                  ? "bg-[#002447] text-white"
+                  : "text-gray-500 hover:bg-gray-50"
+              }`}
+            >
+              Sebagai Penjual
+            </button>
+          )}
+        </div>
+ 
+        {/* Content */}
+        <div className="space-y-4">
+          {loading ? (
+            <>
+              {[...Array(3)].map((_, i) => (
+                <OrderSkeleton key={i} />
+              ))}
+            </>
+          ) : error ? (
+            <OrdersError
+              message={error}
+              onRetry={() => loadOrders(activeTab)}
+            />
+          ) : orders.length === 0 ? (
+            <EmptyOrders role={activeTab} />
+          ) : (
+            orders.map((order) => (
+              <OrderCard
+                key={order.id}
+                order={order}
+                viewAs={activeTab}
+                onActionSuccess={handleActionSuccess}
+              />
+            ))
+          )}
+        </div>
+      </div>
+    </main>
+  );
 }
