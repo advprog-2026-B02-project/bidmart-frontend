@@ -4,7 +4,7 @@ import { fetchInternal } from '@/lib/fetcher';
 async function handleRequest(request: NextRequest) {
     const pathname = request.nextUrl.pathname;
 
-    const endpoint = pathname.replace('/api/orders', '');
+    const endpoint = pathname.replace('/api/orders', '/api/v1/orders');
 
     const serviceUrl = process.env.ORDER_SERVICE_URL!;
 

@@ -4,7 +4,7 @@ import { fetchInternal } from '@/lib/fetcher';
 async function handleRequest(request: NextRequest) {
     const pathname = request.nextUrl.pathname;
 
-    const endpoint = pathname.replace('/api/notifications', '');
+    const endpoint = pathname.replace('/api/notifications', '/api/v1/notifications');
 
     const serviceUrl = process.env.NOTIFICATION_SERVICE_URL!;
 
