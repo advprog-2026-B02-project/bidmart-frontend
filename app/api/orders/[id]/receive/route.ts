@@ -5,11 +5,12 @@ const ORDER_SERVICE_URL = process.env.ORDER_SERVICE_URL ?? "http://localhost:808
  
 export async function PUT(
   _req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const backendRes = await fetchInternal(
-      `/api/v1/orders/${params.id}/receive`,
+      `/api/v1/orders/${id}/receive`,
       {
         serviceUrl: ORDER_SERVICE_URL,
         method: "PUT",

@@ -5,13 +5,14 @@ const ORDER_SERVICE_URL = process.env.ORDER_SERVICE_URL ?? "http://localhost:808
  
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const body = await req.text();
- 
+
     const backendRes = await fetchInternal(
-      `/api/v1/orders/${params.id}/dispute`,
+      `/api/v1/orders/${id}/dispute`,
       {
         serviceUrl: ORDER_SERVICE_URL,
         method: "POST",

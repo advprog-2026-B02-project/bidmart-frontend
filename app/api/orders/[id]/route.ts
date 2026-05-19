@@ -5,10 +5,11 @@ const ORDER_SERVICE_URL = process.env.ORDER_SERVICE_URL ?? "http://localhost:808
  
 export async function GET(
   _req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const backendRes = await fetchInternal(`/api/v1/orders/${params.id}`, {
+    const { id } = await params;
+    const backendRes = await fetchInternal(`/api/v1/orders/${id}`, {
       serviceUrl: ORDER_SERVICE_URL,
     });
  
