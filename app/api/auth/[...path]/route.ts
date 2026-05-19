@@ -4,13 +4,25 @@ import { fetchInternal } from '@/lib/fetcher';
 async function handleRequest(request: NextRequest) {
     const pathname = request.nextUrl.pathname;
 
-    let endpoint = '';
-    
+    let endpointPath = '';
+
     if (pathname === '/api/auth/me') {
-        endpoint = '/users/me'; 
+        endpointPath = '/users/me';
     } else {
-        endpoint = pathname.replace('/api/auth', '/auth');
+        const rawEndpoint = pathname.replace('/api/auth', '');
+        if (rawEndpoint === '/register') {
+            endpointPath = '/auth/register';
+        } else if (
+            rawEndpoint.startsWith('/auth/')
+            || rawEndpoint.startsWith('/users/')
+            || rawEndpoint.startsWith('/admin/')
+        ) {
+            endpointPath = rawEndpoint;
+        } else {
+            endpointPath = `/auth${rawEndpoint}`;
+        }
     }
+    const endpoint = `${endpointPath}${request.nextUrl.search}`;
 
     const serviceUrl = process.env.AUTH_SERVICE_URL!;
 

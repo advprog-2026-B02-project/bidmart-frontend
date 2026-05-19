@@ -66,12 +66,6 @@ async function parseError(res: Response | null) {
 
         const rawMsg = data?.message || data?.error || "";
 
-        if (rawMsg.includes("already used")) {
-            return "Link reset password ini sudah pernah digunakan.";
-        }
-        if (rawMsg.includes("expired")) {
-            return "Link reset password sudah kadaluarsa.";
-        }
         if (rawMsg.includes("Invalid reset token") || rawMsg.includes("Invalid password token")) {
             return "Link reset tidak valid atau tidak ditemukan.";
         }
@@ -87,6 +81,18 @@ async function parseError(res: Response | null) {
         }
         if (rawMsg.includes("Token already used") && !rawMsg.includes("Reset")) {
             return "Akun Anda sudah terverifikasi. Silakan login.";
+        }
+        if (rawMsg.includes("Invalid token")) {
+            return "Link verifikasi tidak valid atau tidak ditemukan.";
+        }
+        if (rawMsg.includes("Token expired")) {
+            return "Link verifikasi sudah kadaluarsa.";
+        }
+        if (rawMsg.includes("already used")) {
+            return "Link reset password ini sudah pernah digunakan.";
+        }
+        if (rawMsg.includes("expired")) {
+            return "Link reset password sudah kadaluarsa.";
         }
 
         return rawMsg || `Terjadi kesalahan (Kode: ${res.status})`;
