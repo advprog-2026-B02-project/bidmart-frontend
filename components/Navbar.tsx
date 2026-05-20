@@ -45,24 +45,31 @@ export default function Navbar() {
                             <div className="h-8 w-24 animate-pulse rounded-lg bg-gray-200" />
                         ) : user ? (
                             <div className="flex items-center gap-4">
-                                {/* Informasi Ringkas Profil */}
-                                <div className="hidden sm:flex flex-col text-right">
-                                    <span className="text-sm font-semibold text-gray-900">{user.displayName}</span>
-                                    <span className="text-xs font-medium text-bidnavy bg-bidnavy/10 px-1.5 py-0.5 rounded self-end uppercase tracking-wider">
-                                        {user.roles.includes("ADMIN") ? "Admin" : user.roles.includes("SELLER") ? "Seller" : "Buyer"}
-                                    </span>
-                                </div>
+                                <Link
+                                    href="/me"
+                                    title="Buka profil"
+                                    className="flex items-center gap-3 rounded-xl px-2 py-1 transition-colors hover:bg-bidcream"
+                                >
+                                    {/* Informasi Ringkas Profil */}
+                                    <div className="hidden sm:flex flex-col text-right">
+                                        <span className="text-sm font-semibold text-gray-900">{user.displayName}</span>
+                                        <span className="text-xs font-medium text-bidnavy bg-bidnavy/10 px-1.5 py-0.5 rounded self-end uppercase tracking-wider">
+                                            {user.roles.includes("ADMIN") ? "Admin" : user.roles.includes("SELLER") ? "Seller" : "Buyer"}
+                                        </span>
+                                    </div>
 
-                                {/* Avatar / Placeholder grafis */}
-                                <div className="h-9 w-9 overflow-hidden rounded-full border border-gray-200 bg-gray-100">
-                                    {user.avatarUrl ? (
-                                        <img src={user.avatarUrl} alt={user.displayName} className="h-full w-full object-cover" />
-                                    ) : (
-                                        <div className="flex h-full w-full items-center justify-center font-bold text-gray-400 text-sm">
-                                            {user.displayName.charAt(0).toUpperCase()}
-                                        </div>
-                                    )}
-                                </div>
+                                    {/* Avatar / Placeholder grafis */}
+                                    <div className="h-9 w-9 overflow-hidden rounded-full border border-gray-200 bg-gray-100">
+                                        {user.avatarUrl ? (
+                                            // eslint-disable-next-line @next/next/no-img-element
+                                            <img src={user.avatarUrl} alt={user.displayName} className="h-full w-full object-cover" />
+                                        ) : (
+                                            <div className="flex h-full w-full items-center justify-center font-bold text-gray-400 text-sm">
+                                                {(user.displayName || user.email || "?").charAt(0).toUpperCase()}
+                                            </div>
+                                        )}
+                                    </div>
+                                </Link>
 
                                 {/* Tombol Keluar Sesi */}
                                 <button
