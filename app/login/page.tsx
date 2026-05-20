@@ -4,6 +4,7 @@ import React, {useState} from "react";
 import {useRouter} from "next/navigation";
 import Link from "next/link";
 import {useAuth} from "@/context/AuthContext";
+import {getDefaultRoute, getSafeNextPath} from "@/lib/navigation";
 
 export default function LoginPage() {
     const {login} = useAuth();
@@ -13,6 +14,12 @@ export default function LoginPage() {
     const [password, setPassword] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+
+    function getPendingNextPath() {
+        if (typeof window === "undefined") return null;
+        const next = new URLSearchParams(window.location.search).get("next");
+        return getSafeNextPath(next);
+    }
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -29,16 +36,18 @@ export default function LoginPage() {
             const data = await res.json();
 
             if (!res.ok) {
-                throw new Error(data.error || "Alamat email atau kata sandi salah.");
+                throw new Error(data.error || data.message || "Alamat email atau kata sandi salah.");
             }
 
             if (data.requires2FA) {
-                router.push(`/login/2fa?token=${data.partialToken}`);
+                const next = getPendingNextPath();
+                const nextQuery = next ? `&next=${encodeURIComponent(next)}` : "";
+                router.push(`/login/2fa?token=${data.partialToken}${nextQuery}`);
                 return;
             }
 
             login(data.user);
-            router.push("/");
+            router.replace(getPendingNextPath() ?? getDefaultRoute(data.user?.roles ?? []));
             router.refresh();
         } catch (err: unknown) {
             const error = err as Error;

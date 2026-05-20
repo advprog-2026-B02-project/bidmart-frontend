@@ -49,6 +49,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const logout = async () => {
         try {
             await fetch("/api/auth/logout", { method: "POST" });
+            localStorage.removeItem("accessToken");
+            localStorage.removeItem("refreshToken");
             setUser(null);
         } catch (error) {
             console.error("Logout gagal:", error);

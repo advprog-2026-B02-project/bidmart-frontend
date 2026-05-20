@@ -3,6 +3,8 @@
 import React, {useState} from "react";
 import {useRouter} from "next/navigation";
 import Link from "next/link";
+import type {Role} from "@/types/auth";
+import {normalizeRole} from "@/lib/navigation";
 
 export default function RegisterPage() {
     const router = useRouter();
@@ -11,6 +13,7 @@ export default function RegisterPage() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
+    const [role, setRole] = useState<Role>("BUYER");
 
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -46,6 +49,7 @@ export default function RegisterPage() {
                     email,
                     password,
                     displayName,
+                    role,
                 }),
             });
 
@@ -55,7 +59,7 @@ export default function RegisterPage() {
                 throw new Error(data.message || "Gagal melakukan registrasi.");
             }
 
-            router.push(`/verify?email=${encodeURIComponent(email)}`);
+            router.replace(`/verify?email=${encodeURIComponent(email)}&role=${role}`);
         } catch (err: unknown) {
             const error = err as Error;
             setError(error.message || "Terjadi kesalahan koneksi sistem.");
@@ -99,6 +103,29 @@ export default function RegisterPage() {
                                 className="block w-full rounded-lg border border-gray-300 px-3 py-2.5 text-gray-900 placeholder-gray-400 transition-colors focus:border-bidnavy focus:outline-none focus:ring-2 focus:ring-bidnavy sm:text-sm"
                                 placeholder="Nama Lengkap / Nama Toko"
                             />
+                        </div>
+
+                        <div>
+                            <span className="mb-2 block text-sm font-medium text-gray-700">
+                                Daftar sebagai <span className="text-red-500">*</span>
+                            </span>
+                            <div className="grid grid-cols-2 gap-2 rounded-xl border border-gray-200 bg-gray-50 p-1">
+                                {(["BUYER", "SELLER"] as Role[]).map((option) => (
+                                    <button
+                                        key={option}
+                                        type="button"
+                                        disabled={isLoading}
+                                        onClick={() => setRole(normalizeRole(option))}
+                                        className={`rounded-lg px-3 py-2 text-sm font-bold transition-colors ${
+                                            role === option
+                                                ? "bg-bidnavy text-white shadow-sm"
+                                                : "text-gray-600 hover:bg-white"
+                                        }`}
+                                    >
+                                        {option === "BUYER" ? "Buyer" : "Seller"}
+                                    </button>
+                                ))}
+                            </div>
                         </div>
 
                         <div>

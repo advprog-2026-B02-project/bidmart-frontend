@@ -1,10 +1,14 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import Link from "next/link";
 import { CatalogItem } from "@/types/catalog";
 import AuctionCard from "@/components/AuctionCard";
+import {useAuth} from "@/context/AuthContext";
+import {canAccessSellerArea} from "@/lib/navigation";
 
 export default function HomePage() {
+  const {user} = useAuth();
   const [listings, setListings] = useState<CatalogItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -16,7 +20,15 @@ export default function HomePage() {
         const res = await fetch("/api/catalog");
 
         if (!res.ok) {
-          throw new Error("Gagal mengambil data katalog lelang.");
+          const responseText = await res.text();
+          let message = "Gagal mengambil data katalog lelang.";
+          try {
+            const data = responseText ? JSON.parse(responseText) : null;
+            message = data?.message || data?.error || message;
+          } catch {
+            message = responseText || message;
+          }
+          throw new Error(message);
         }
 
         const data = await res.json();
@@ -43,6 +55,47 @@ export default function HomePage() {
           <p className="mt-1 text-sm text-gray-500">
             Jelajahi barang-barang populer dan ajukan penawaran Anda secara langsung.
           </p>
+        </div>
+        <div className="mt-4 flex flex-wrap gap-2 md:mt-0">
+          {user ? (
+            <>
+              <Link
+                href="/wallet"
+                className="rounded-lg border border-bidnavy/20 bg-white px-4 py-2 text-sm font-bold text-bidnavy shadow-sm hover:bg-bidcream"
+              >
+                Wallet
+              </Link>
+              <Link
+                href="/orders"
+                className="rounded-lg border border-bidnavy/20 bg-white px-4 py-2 text-sm font-bold text-bidnavy shadow-sm hover:bg-bidcream"
+              >
+                Pesanan
+              </Link>
+              {canAccessSellerArea(user.roles) && (
+                <Link
+                  href="/seller/listings/new"
+                  className="rounded-lg bg-bidnavy px-4 py-2 text-sm font-bold text-white shadow-sm hover:bg-bidnavy2"
+                >
+                  Buat Lelang
+                </Link>
+              )}
+            </>
+          ) : (
+            <>
+              <Link
+                href="/login"
+                className="rounded-lg border border-bidnavy/20 bg-white px-4 py-2 text-sm font-bold text-bidnavy shadow-sm hover:bg-bidcream"
+              >
+                Masuk
+              </Link>
+              <Link
+                href="/register"
+                className="rounded-lg bg-bidnavy px-4 py-2 text-sm font-bold text-white shadow-sm hover:bg-bidnavy2"
+              >
+                Daftar
+              </Link>
+            </>
+          )}
         </div>
       </div>
 

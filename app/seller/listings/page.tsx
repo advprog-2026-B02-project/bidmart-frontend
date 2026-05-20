@@ -52,8 +52,14 @@ export default function SellerDashboardPage() {
             });
 
             if (!res.ok) {
-                const data = await res.json();
-                throw new Error(data.error || "Gagal mengaktifkan lelang.");
+                const responseText = await res.text();
+                let data: { error?: string; message?: string } = {};
+                try {
+                    data = responseText ? JSON.parse(responseText) : {};
+                } catch {
+                    data = { message: responseText };
+                }
+                throw new Error(data.error || data.message || "Gagal mengaktifkan lelang.");
             }
 
             await fetchSellerListings();

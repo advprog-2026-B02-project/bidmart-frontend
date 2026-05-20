@@ -51,10 +51,16 @@ export default function NewListingPage() {
                 body: JSON.stringify(payload),
             });
 
-            const data = await res.json();
+            const responseText = await res.text();
+            let data: { error?: string; message?: string } = {};
+            try {
+                data = responseText ? JSON.parse(responseText) : {};
+            } catch {
+                data = { message: responseText };
+            }
 
             if (!res.ok) {
-                throw new Error(data.error || "Gagal membuat listing lelang baru.");
+                throw new Error(data.error || data.message || "Gagal membuat listing lelang baru.");
             }
 
             router.push("/seller/listings");

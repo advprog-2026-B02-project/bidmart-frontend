@@ -67,7 +67,7 @@ export default function CatalogCard({ item }: Props) {
  
   return (
     <Link
-      href={`/catalog/${item.id}`}
+      href={`/auctions/${item.id}`}
       className="group flex flex-col rounded-2xl border border-gray-100 bg-white shadow-sm transition-shadow hover:shadow-md"
     >
       {/* Thumbnail */}

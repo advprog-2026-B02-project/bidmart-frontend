@@ -17,7 +17,7 @@ export async function fetchInternal(endpoint: string, options: FetchOptions) {
 
         internalHeaders.set('X-User-Id', session.userId);
 
-        if (session.roles.includes('SELLER')) {
+        if (session.roles.includes('SELLER') || session.roles.includes('ADMIN')) {
             internalHeaders.set('X-Seller-Id', session.userId);
         }
     }

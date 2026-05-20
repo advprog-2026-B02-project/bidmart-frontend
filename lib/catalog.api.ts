@@ -24,7 +24,7 @@ export async function fetchCatalog(
   const res = await fetch(url, { cache: "no-store" });
  
   if (!res.ok) {
-    throw new Error(`Gagal memuat katalog (HTTP ${res.status})`);
+    throw new Error(await readErrorMessage(res, `Gagal memuat katalog (HTTP ${res.status})`));
   }
  
   return res.json() as Promise<CatalogPageResponse>;
@@ -38,7 +38,7 @@ export async function fetchListingDetail(id: string): Promise<ListingDetail> {
   }
  
   if (!res.ok) {
-    throw new Error(`Gagal memuat detail listing (HTTP ${res.status})`);
+    throw new Error(await readErrorMessage(res, `Gagal memuat detail listing (HTTP ${res.status})`));
   }
  
   return res.json() as Promise<ListingDetail>;
@@ -48,8 +48,20 @@ export async function fetchCategories(): Promise<Category[]> {
   const res = await fetch("/api/categories", { cache: "no-store" });
  
   if (!res.ok) {
-    throw new Error(`Gagal memuat kategori (HTTP ${res.status})`);
+    throw new Error(await readErrorMessage(res, `Gagal memuat kategori (HTTP ${res.status})`));
   }
  
   return res.json() as Promise<Category[]>;
+}
+
+async function readErrorMessage(res: Response, fallback: string): Promise<string> {
+  const text = await res.text();
+  if (!text) return fallback;
+
+  try {
+    const data = JSON.parse(text);
+    return data?.message || data?.error || fallback;
+  } catch {
+    return text;
+  }
 }

@@ -1,6 +1,6 @@
 // lib/bidding.api.ts
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080";
+const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "/api/bidding";
 
 // types
 
@@ -119,7 +119,7 @@ export async function startAuction(listingId: string, payload: {
 
 export const getMyBids = async (userId: string, token: string) => {
     // Sesuaikan BASE_URL dengan yang lu pake
-    const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+    const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "/api/bidding";
 
     const res = await fetch(`${BASE_URL}/auctions/my-bids?page=0&size=20`, {
         method: "GET",

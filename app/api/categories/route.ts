@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { fetchInternal } from "@/lib/fetcher";
  
-const CATALOG_SERVICE_URL = process.env.CATALOG_SERVICE_URL ?? "http://localhost:8080";
+const CATALOG_SERVICE_URL = process.env.CATALOG_SERVICE_URL ?? "http://localhost:8083";
  
 export async function GET(): Promise<NextResponse> {
   try {
@@ -10,7 +10,13 @@ export async function GET(): Promise<NextResponse> {
       method: "GET",
     });
  
-    const data: unknown = await backendRes.json();
+    const responseText = await backendRes.text();
+    let data: unknown;
+    try {
+      data = responseText ? JSON.parse(responseText) : [];
+    } catch {
+      data = { message: responseText || "Catalog service mengembalikan response non-JSON." };
+    }
  
     return NextResponse.json(data, { status: backendRes.status });
   } catch (error) {

@@ -4,7 +4,7 @@ import { fetchInternal } from '@/lib/fetcher';
 async function handleRequest(request: NextRequest) {
     const pathname = request.nextUrl.pathname;
 
-    const endpoint = pathname.replace('/api/bidding', '');
+    const endpoint = `${pathname.replace('/api/bidding', '')}${request.nextUrl.search}`;
 
     const serviceUrl = process.env.BIDDING_SERVICE_URL!;
 
@@ -32,9 +32,9 @@ async function handleRequest(request: NextRequest) {
     const responseText = await response.text();
     let responseBody;
     try {
-        responseBody = JSON.parse(responseText);
+        responseBody = responseText ? JSON.parse(responseText) : null;
     } catch {
-        responseBody = responseText;
+        responseBody = { message: responseText || `Bidding request failed with status ${response.status}` };
     }
 
     return NextResponse.json(responseBody, { status: response.status });

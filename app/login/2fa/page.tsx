@@ -3,6 +3,7 @@
 import React, { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
+import {getDefaultRoute, getSafeNextPath} from "@/lib/navigation";
 
 function TwoFactorAuthContent() {
     const { login } = useAuth();
@@ -10,6 +11,7 @@ function TwoFactorAuthContent() {
     const searchParams = useSearchParams();
 
     const partialToken = searchParams.get("token");
+    const nextPath = getSafeNextPath(searchParams.get("next"));
 
     const [code, setCode] = useState("");
     const [error, setError] = useState<string | null>(null);
@@ -49,9 +51,10 @@ function TwoFactorAuthContent() {
                 throw new Error(data.error || "Kode verifikasi yang Anda masukkan salah.");
             }
 
-            login(data.user || data);
+            const loggedInUser = data.user || data;
+            login(loggedInUser);
 
-            router.push("/");
+            router.replace(nextPath ?? getDefaultRoute(loggedInUser?.roles ?? []));
             router.refresh();
         } catch (err: unknown) {
             const error = err as Error;
