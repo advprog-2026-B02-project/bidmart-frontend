@@ -1,43 +1,21 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { fetchInternal } from '@/lib/fetcher';
+import { NextRequest } from 'next/server';
+import { proxyRequest } from '@/lib/proxy';
+
+const serviceUrl = process.env.NOTIFICATION_SERVICE_URL!;
 
 async function handleRequest(request: NextRequest) {
     const pathname = request.nextUrl.pathname;
 
-    const endpoint = pathname.replace('/api/notifications', '/api/v1/notifications');
+    const endpoint =
+        pathname.replace(
+            '/api/notifications',
+            '/api/v1/notifications'
+        ) + request.nextUrl.search;
 
-    const serviceUrl = process.env.NOTIFICATION_SERVICE_URL!;
-
-    const headers: Record<string, string> = {};
-    request.headers.forEach((value, key) => {
-        if (key.toLowerCase() !== 'host') {
-            headers[key] = value;
-        }
+    return proxyRequest(request, {
+        serviceUrl,
+        endpoint,
     });
-
-    const init: RequestInit = {
-        method: request.method,
-        headers: headers
-    };
-
-    if (request.method !== 'GET' && request.method !== 'HEAD') {
-        init.body = await request.text();
-    }
-
-    const response = await fetchInternal(endpoint, {
-        ...init,
-        serviceUrl
-    });
-
-    const responseText = await response.text();
-    let responseBody;
-    try {
-        responseBody = JSON.parse(responseText);
-    } catch {
-        responseBody = responseText;
-    }
-
-    return NextResponse.json(responseBody, { status: response.status });
 }
 
 export const GET = handleRequest;
