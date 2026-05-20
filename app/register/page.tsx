@@ -51,7 +51,8 @@ export default function RegisterPage() {
                 }),
             });
 
-            const data = await res.json();
+            const rawResponse = await res.text();
+            const data = rawResponse ? JSON.parse(rawResponse) : {};
 
             if (!res.ok) {
                 throw new Error(data.message || "Gagal melakukan registrasi.");
