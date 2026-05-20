@@ -196,12 +196,12 @@ export async function revokeSession(sessionId: string) {
     }
 }
 
-export async function register(email: string, password: string, displayName: string) {
+export async function register(email: string, password: string, displayName: string, role: "BUYER" | "SELLER" = "BUYER") {
     try {
         const res = await fetch(`${BASE_URL}/auth/register`, {
             method: "POST",
             headers: {"Content-Type": "application/json"},
-            body: JSON.stringify({email, password, displayName}),
+            body: JSON.stringify({email, password, displayName, role}),
         });
 
         if (!res.ok) {
