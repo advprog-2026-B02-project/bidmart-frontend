@@ -8,8 +8,14 @@ const nextConfig = {
 
   async rewrites() {
     return [
-      { source: '/api/bidding/ws-auction/:path*', destination: `${biddingServiceUrl}/ws-auction/:path*` },
-      { source: '/api/notifications/ws/notifications/:path*', destination: `${notificationServiceUrl}/ws/notifications/:path*` },
+      {
+        source: '/api/bidding/ws-auction/:path*',
+        destination: `${biddingServiceUrl}/ws-auction/:path*`,
+      },
+      {
+        source: '/api/notifications/ws/notifications/:path*',
+        destination: `${notificationServiceUrl}/api/notifications/ws/notifications/:path*`,
+      },
     ];
   },
 };
