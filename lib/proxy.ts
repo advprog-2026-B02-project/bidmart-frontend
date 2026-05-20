@@ -6,6 +6,7 @@ const EXCLUDED_HEADERS = new Set([
     'connection',
     'content-length',
     'transfer-encoding',
+    'origin',
 ]);
 
 function buildHeaders(request: NextRequest): HeadersInit {
