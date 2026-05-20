@@ -7,6 +7,7 @@ import Link from "next/link";
 export default function RegisterPage() {
     const router = useRouter();
 
+    const [role, setRole] = useState<"BUYER" | "SELLER">("BUYER");
     const [displayName, setDisplayName] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
@@ -46,6 +47,7 @@ export default function RegisterPage() {
                     email,
                     password,
                     displayName,
+                    role,
                 }),
             });
 
@@ -99,6 +101,42 @@ export default function RegisterPage() {
                                 className="block w-full rounded-lg border border-gray-300 px-3 py-2.5 text-gray-900 placeholder-gray-400 transition-colors focus:border-bidnavy focus:outline-none focus:ring-2 focus:ring-bidnavy sm:text-sm"
                                 placeholder="Nama Lengkap / Nama Toko"
                             />
+                        </div>
+
+                        <div>
+                            <span className="mb-2 block text-sm font-medium text-gray-700">
+                                Daftar sebagai <span className="text-red-500">*</span>
+                            </span>
+                            <div className="grid grid-cols-2 gap-3">
+                                {[
+                                    {value: "BUYER", label: "Buyer"},
+                                    {value: "SELLER", label: "Seller"},
+                                ].map((option) => {
+                                    const selected = role === option.value;
+
+                                    return (
+                                        <label
+                                            key={option.value}
+                                            className={`flex cursor-pointer items-center justify-center rounded-lg border px-3 py-2.5 text-sm font-semibold transition-colors ${
+                                                selected
+                                                    ? "border-bidnavy bg-bidnavy text-white"
+                                                    : "border-gray-300 bg-white text-bidnavy hover:border-bidnavy"
+                                            } ${isLoading ? "cursor-not-allowed opacity-60" : ""}`}
+                                        >
+                                            <input
+                                                type="radio"
+                                                name="role"
+                                                value={option.value}
+                                                checked={selected}
+                                                onChange={() => setRole(option.value as "BUYER" | "SELLER")}
+                                                disabled={isLoading}
+                                                className="sr-only"
+                                            />
+                                            {option.label}
+                                        </label>
+                                    );
+                                })}
+                            </div>
                         </div>
 
                         <div>
