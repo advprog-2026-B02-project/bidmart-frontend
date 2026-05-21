@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import SockJS from "sockjs-client";
 import { Client } from "@stomp/stompjs";
 import { BidResponse } from "@/types/bidding";
 
@@ -16,8 +15,11 @@ export function useAuctionWebSocket({ auctionId, onBidPlaced }: WebSocketArgs) {
     useEffect(() => {
         if (!auctionId) return;
 
+        const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+        const brokerURL = `${protocol}//${window.location.host}/ws-bidding/websocket`;
+
         const client = new Client({
-            webSocketFactory: () => new SockJS("/ws-bidding", null, { transports: ["websocket"] }),
+            brokerURL,
             debug: () => { },
             reconnectDelay: 5000,
         });
