@@ -1,7 +1,10 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import {useAuth} from "@/context/AuthContext";
+import {moderateAdminListing} from "@/lib/admin-operations.api";
 import { fetchCatalog, fetchCategories } from "@/lib/catalog.api";
+import {canAccessAdminArea} from "@/lib/navigation";
 import type { CatalogItem, Category, CatalogQueryParams } from "@/types/catalog";
 import CatalogCard from "@/components/catalog/CatalogCard";
 import CatalogCardSkeleton from "@/components/catalog/CatalogCardSkeleton";
@@ -180,6 +183,9 @@ function Pagination({
 }
 
 export default function CatalogPage() {
+  const {user} = useAuth();
+  const isAdmin = canAccessAdminArea(user?.roles ?? []);
+
   // Filter state
   const [query, setQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
@@ -201,6 +207,8 @@ export default function CatalogPage() {
   // UI state
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
  
   useEffect(() => {
     let isMounted = true;
@@ -289,6 +297,22 @@ export default function CatalogPage() {
     },
     []
   );
+
+  const handleAdminDelete = useCallback(async (id: string) => {
+    if (!window.confirm("Hapus listing ini dari katalog?")) return;
+
+    setDeletingId(id);
+    setDeleteError(null);
+
+    try {
+      await moderateAdminListing(id, "DELETE", "Deleted by admin from catalog page");
+      setItems((current) => current.filter((item) => item.id !== id));
+    } catch (err) {
+      setDeleteError(err instanceof Error ? err.message : "Gagal menghapus listing dari katalog.");
+    } finally {
+      setDeletingId(null);
+    }
+  }, []);
  
   return (
     <main className="min-h-screen bg-[#f6f4ef]">
@@ -319,6 +343,12 @@ export default function CatalogPage() {
         />
  
         <div className="mt-8">
+          {deleteError && (
+            <div className="mb-5 rounded-2xl bg-red-50 px-6 py-4 text-sm font-semibold text-red-600">
+              {deleteError}
+            </div>
+          )}
+
           {/* Error state */}
           {error && !loading && (
             <div className="rounded-2xl bg-red-50 px-6 py-5 text-sm text-red-600">
@@ -366,7 +396,13 @@ export default function CatalogPage() {
             <>
               <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                 {items.map((item) => (
-                  <CatalogCard key={item.id} item={item} />
+                  <CatalogCard
+                    key={item.id}
+                    item={item}
+                    canDelete={isAdmin}
+                    deleting={deletingId === item.id}
+                    onDelete={handleAdminDelete}
+                  />
                 ))}
               </div>
  

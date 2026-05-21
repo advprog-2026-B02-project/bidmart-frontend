@@ -3,7 +3,6 @@
 import {useEffect, useState} from "react";
 import {useRouter} from "next/navigation";
 import {logout, me} from "@/lib/api";
-import AuthShell from "@/components/AuthShell";
 
 interface UserProfile {
     email: string;
@@ -11,6 +10,8 @@ interface UserProfile {
     avatarUrl?: string | null;
     roles?: string[];
     permissions?: string[];
+    emailVerified?: boolean;
+    status?: string;
 }
 
 export default function MePage() {
@@ -28,6 +29,8 @@ export default function MePage() {
                     avatarUrl: data?.avatarUrl || null,
                     roles: data?.roles || [],
                     permissions: data?.permissions || [],
+                    emailVerified: data?.emailVerified,
+                    status: data?.status,
                 });
                 setMsg("");
             } catch (err: unknown) {
@@ -47,107 +50,148 @@ export default function MePage() {
         }
     }
 
-    const getInitials = (name: string) => {
-        return name ? name.charAt(0).toUpperCase() : "?";
-    };
-
-    const canOpenAdmin = Boolean(
-        user?.roles?.includes("ADMIN") ||
-        user?.permissions?.some((permission) => permission.startsWith("ADMIN_"))
-    );
+    const initials = user?.displayName?.charAt(0).toUpperCase() || "?";
+    const primaryRole = user?.roles?.includes("ADMIN")
+        ? "ADMIN"
+        : user?.roles?.includes("SELLER")
+            ? "SELLER"
+            : "BUYER";
+    const canOpenAdmin = user?.roles?.includes("ADMIN");
+    const canOpenSeller = user?.roles?.includes("SELLER");
 
     return (
-        <AuthShell
-            title="Profil Akun"
-            subtitle="Informasi akun yang sedang aktif saat ini."
-        >
-            <div className="flex flex-col space-y-6">
+        <main className="min-h-screen bg-bidcream px-4 py-10 sm:px-6 lg:px-8">
+            <div className="mx-auto max-w-7xl space-y-8">
+                <section>
+                    <p className="text-xs font-bold uppercase tracking-[0.25em] text-bidnavy/60">BidMart Account</p>
+                    <h1 className="mt-2 text-3xl font-black tracking-tight text-bidnavy sm:text-4xl">
+                        Akun dan Aktivitas
+                    </h1>
+                </section>
+
                 {msg ? (
-                    <div className="text-center text-sm font-medium text-black/50 py-4">
+                    <div className="rounded-xl border border-red-100 bg-red-50 px-5 py-4 text-sm font-semibold text-red-600">
                         {msg}
                     </div>
                 ) : (
-                    <div className="p-6 rounded-2xl bg-[#002447]/5 border border-[#002447]/10 flex items-center space-x-5">
-                        {/* FOTO PROFIL / AVATAR */}
-                        <div className="flex-shrink-0 w-16 h-16 rounded-full overflow-hidden bg-[#002447] text-white flex items-center justify-center text-2xl font-bold shadow-inner">
-                            {user?.avatarUrl ? (
-                                // eslint-disable-next-line @next/next/no-img-element
-                                <img
-                                    src={user.avatarUrl}
-                                    alt="Avatar"
-                                    className="w-full h-full object-cover"
-                                />
-                            ) : (
-                                getInitials(user?.displayName || "")
-                            )}
-                        </div>
+                    <>
+                        <section className="grid gap-6 lg:grid-cols-[1.45fr_1fr]">
+                            <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+                                <div className="flex flex-col gap-6 sm:flex-row sm:items-center">
+                                    <div className="h-28 w-28 shrink-0 overflow-hidden rounded-full border border-gray-200 bg-bidnavy text-white">
+                                        {user?.avatarUrl ? (
+                                            // eslint-disable-next-line @next/next/no-img-element
+                                            <img
+                                                src={user.avatarUrl}
+                                                alt={user.displayName}
+                                                className="h-full w-full object-cover"
+                                            />
+                                        ) : (
+                                            <div className="flex h-full w-full items-center justify-center text-4xl font-black">
+                                                {initials}
+                                            </div>
+                                        )}
+                                    </div>
 
-                        {/* INFO NAMA & EMAIL */}
-                        <div className="flex flex-col overflow-hidden">
-                            <p className="text-sm font-medium text-black/40 uppercase tracking-wider mb-1">
-                                Terhubung sebagai
-                            </p>
-                            <h2 className="text-xl font-bold text-[#002447] truncate">
-                                {user?.displayName}
-                            </h2>
-                            <p className="text-sm text-black/60 truncate">
-                                {user?.email}
-                            </p>
-                        </div>
-                    </div>
+                                    <div className="min-w-0 flex-1">
+                                        <div className="flex flex-wrap items-center gap-2">
+                                            <h2 className="truncate text-2xl font-black text-bidnavy">
+                                                {user?.displayName}
+                                            </h2>
+                                            <span className="rounded-md bg-bidnavy/10 px-2 py-1 text-xs font-bold text-bidnavy">
+                                                {primaryRole}
+                                            </span>
+                                        </div>
+                                        <p className="mt-1 truncate text-sm font-medium text-gray-500">{user?.email}</p>
+
+                                        <div className="mt-6 grid gap-3 sm:grid-cols-3">
+                                            <ProfileStat label="Status" value={user?.status || "ACTIVE"} />
+                                            <ProfileStat label="Email" value={user?.emailVerified === false ? "Belum verified" : "Verified"} />
+                                            <ProfileStat label="Permissions" value={String(user?.permissions?.length || 0)} />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+                                <h2 className="text-sm font-black text-gray-500">Quick actions</h2>
+                                <div className="mt-5 space-y-3">
+                                    <ActionButton label="Edit Profil" onClick={() => router.push("/me/edit")} />
+                                    <ActionButton label="Buka Wallet" onClick={() => router.push("/wallet")} />
+                                    <ActionButton label="Kelola Sesi Aktif" onClick={() => router.push("/me/sessions")} />
+                                    <ActionButton label="Kelola 2FA" onClick={() => router.push("/me/2fa")} />
+                                    {canOpenAdmin && <ActionButton label="Dashboard Admin" onClick={() => router.push("/admin")} />}
+                                    <button
+                                        onClick={onLogout}
+                                        className="w-full rounded-lg border border-red-200 px-4 py-3 text-left text-sm font-bold text-red-600 transition-colors hover:bg-red-50"
+                                    >
+                                        Keluar dari Sesi
+                                    </button>
+                                </div>
+                            </div>
+                        </section>
+
+                        <section className="grid gap-4 md:grid-cols-4">
+                            <ProfileStatCard label="Available Balance" value="-" description="Saldo siap dipakai" />
+                            <ProfileStatCard label="Held Balance" value="-" description="Saldo tertahan untuk bid/order" />
+                            <ProfileStatCard label="Katalog Aktif" value="-" description="Listing yang sedang tampil" />
+                            <ProfileStatCard label="Order Saya" value="0" description="Sebagai buyer" />
+                        </section>
+
+                        {canOpenSeller && (
+                            <section className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+                                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                                    <div>
+                                        <p className="text-xs font-black uppercase tracking-[0.25em] text-bidnavy/70">
+                                            Seller Activity
+                                        </p>
+                                        <h2 className="mt-2 text-2xl font-black text-bidnavy">Dashboard penjual</h2>
+                                        <p className="mt-1 text-sm text-gray-500">
+                                            Kelola listing, cek order masuk, dan pantau aktivitas penjualan.
+                                        </p>
+                                    </div>
+                                    <button
+                                        onClick={() => router.push("/seller/listings")}
+                                        className="rounded-lg bg-bidnavy px-5 py-3 text-sm font-bold text-white transition-colors hover:bg-bidnavy2"
+                                    >
+                                        Buka Dashboard
+                                    </button>
+                                </div>
+                            </section>
+                        )}
+                    </>
                 )}
-
-                <div className="pt-4 space-y-3">
-                    <button
-                        onClick={() => router.push("/wallet")}
-                        className="w-full rounded-xl py-4 text-lg font-bold text-white bg-gradient-to-r from-bidnavy to-bidnavy2 hover:opacity-90 transition-all shadow-md active:scale-[0.98]"
-                        disabled={!!msg}
-                    >
-                        Wallet Demo
-                    </button>
-
-                    <button
-                        onClick={() => router.push("/me/edit")}
-                        className="w-full rounded-xl py-4 text-lg font-bold text-[#002447] bg-[#002447]/10 hover:bg-[#002447]/20 transition-all shadow-sm active:scale-[0.98]"
-                        disabled={!!msg}
-                    >
-                        Edit Profil
-                    </button>
-
-                    <button
-                        onClick={() => router.push("/me/2fa")}
-                        className="w-full rounded-xl py-4 text-lg font-bold text-[#002447] bg-[#002447]/10 hover:bg-[#002447]/20 transition-all shadow-sm active:scale-[0.98]"
-                        disabled={!!msg}
-                    >
-                        Kelola 2FA
-                    </button>
-
-                    <button
-                        onClick={() => router.push("/me/sessions")}
-                        className="w-full rounded-xl py-4 text-lg font-bold text-[#002447] bg-[#002447]/10 hover:bg-[#002447]/20 transition-all shadow-sm active:scale-[0.98]"
-                        disabled={!!msg}
-                    >
-                        Kelola Sesi Aktif
-                    </button>
-
-                    {canOpenAdmin && (
-                        <button
-                            onClick={() => router.push("/admin")}
-                            className="w-full rounded-xl py-4 text-lg font-bold text-white bg-[#006c67] hover:bg-[#00534f] transition-all shadow-md active:scale-[0.98]"
-                            disabled={!!msg}
-                        >
-                            Dashboard Admin
-                        </button>
-                    )}
-
-                    <button
-                        onClick={onLogout}
-                        className="w-full rounded-xl py-4 text-lg font-bold text-white bg-red-600 hover:bg-red-700 transition-all shadow-md active:scale-[0.98]"
-                    >
-                        Keluar dari Sesi
-                    </button>
-                </div>
             </div>
-        </AuthShell>
+        </main>
+    );
+}
+
+function ProfileStat({label, value}: { label: string; value: string }) {
+    return (
+        <div className="rounded-lg bg-bidcream px-4 py-3">
+            <p className="text-xs font-black uppercase tracking-[0.15em] text-gray-400">{label}</p>
+            <p className="mt-2 text-sm font-black text-bidnavy">{value}</p>
+        </div>
+    );
+}
+
+function ProfileStatCard({label, value, description}: { label: string; value: string; description: string }) {
+    return (
+        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+            <p className="text-xs font-black uppercase tracking-[0.25em] text-gray-400">{label}</p>
+            <p className="mt-5 text-3xl font-black text-bidnavy">{value}</p>
+            <p className="mt-3 text-sm font-medium text-gray-500">{description}</p>
+        </div>
+    );
+}
+
+function ActionButton({label, onClick}: { label: string; onClick: () => void }) {
+    return (
+        <button
+            onClick={onClick}
+            className="w-full rounded-lg border border-gray-200 px-4 py-3 text-left text-sm font-bold text-bidnavy transition-colors hover:bg-bidcream"
+        >
+            {label}
+        </button>
     );
 }

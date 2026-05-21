@@ -6,6 +6,9 @@ import type { CatalogItem } from "@/types/catalog";
  
 interface Props {
   item: CatalogItem;
+  canDelete?: boolean;
+  deleting?: boolean;
+  onDelete?: (id: string) => void;
 }
  
 function formatRupiah(amount: number): string {
@@ -59,32 +62,31 @@ function useCountdown(auctionEndTime: string | null): string | null {
 
 const PLACEHOLDER_IMAGE = "/images/placeholder-catalog.png";
 
-export default function CatalogCard({ item }: Props) {
+export default function CatalogCard({ item, canDelete = false, deleting = false, onDelete }: Props) {
   const countdown = useCountdown(item.auctionEndTime);
 
   const imageUrl = item.thumbnailUrl ?? PLACEHOLDER_IMAGE;
   const hasRealImage = !!item.thumbnailUrl;
  
   return (
-    <Link
-      href={`/auctions/${item.id}`}
-      className="group flex flex-col rounded-2xl border border-gray-100 bg-white shadow-sm transition-shadow hover:shadow-md"
-    >
+    <article className="group flex flex-col rounded-2xl border border-gray-100 bg-white shadow-sm transition-shadow hover:shadow-md">
       {/* Thumbnail */}
       <div className="relative h-44 w-full overflow-hidden rounded-t-2xl bg-gray-100">
-        {hasRealImage ? (
-          <Image
-            src={imageUrl}
-            alt={item.title}
-            width={400}
-            height={176}
-            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-          />
-        ) : (
-          <div className="flex h-full w-full items-center justify-center bg-[#f6f4ef]">
-            <span className="text-4xl text-gray-300">🏷️</span>
-          </div>
-        )}
+        <Link href={`/auctions/${item.id}`} className="block h-full w-full">
+          {hasRealImage ? (
+            <Image
+              src={imageUrl}
+              alt={item.title}
+              width={400}
+              height={176}
+              className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+            />
+          ) : (
+            <div className="flex h-full w-full items-center justify-center bg-[#f6f4ef]">
+              <span className="text-4xl text-gray-300">🏷️</span>
+            </div>
+          )}
+        </Link>
  
         {/* Badge kategori */}
         {item.categoryName && (
@@ -101,9 +103,12 @@ export default function CatalogCard({ item }: Props) {
  
       {/* Konten card */}
       <div className="flex flex-1 flex-col gap-2 p-4">
-        <h3 className="line-clamp-2 text-sm font-semibold leading-snug text-gray-900 group-hover:text-[#002447]">
+        <Link
+          href={`/auctions/${item.id}`}
+          className="line-clamp-2 text-sm font-semibold leading-snug text-gray-900 group-hover:text-[#002447]"
+        >
           {item.title}
-        </h3>
+        </Link>
  
         {/* Harga */}
         <div className="mt-auto space-y-1">
@@ -131,7 +136,18 @@ export default function CatalogCard({ item }: Props) {
             <span>{countdown}</span>
           </div>
         )}
+
+        {canDelete && (
+          <button
+            type="button"
+            disabled={deleting}
+            onClick={() => onDelete?.(item.id)}
+            className="mt-2 rounded-xl border border-red-200 px-3 py-2 text-xs font-semibold text-red-700 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {deleting ? "Menghapus..." : "Delete dari katalog"}
+          </button>
+        )}
       </div>
-    </Link>
+    </article>
   );
 }

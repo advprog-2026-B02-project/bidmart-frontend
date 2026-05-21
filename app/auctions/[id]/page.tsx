@@ -37,8 +37,8 @@ function formatDate(iso: string | null): string {
 
 function StatusBadge({ status }: { status: ListingDetail["status"] }) {
   const map: Record<ListingDetail["status"], { label: string; className: string }> = {
-    DRAFT:  { label: "Draft",    className: "bg-yellow-100 text-yellow-700 border-yellow-200" },
-    ACTIVE: { label: "Aktif",    className: "bg-green-100 text-green-700 border-green-200" },
+    DRAFT: { label: "Draft", className: "bg-yellow-100 text-yellow-700 border-yellow-200" },
+    ACTIVE: { label: "Aktif", className: "bg-green-100 text-green-700 border-green-200" },
     CLOSED: { label: "Ditutup", className: "bg-gray-100 text-gray-500 border-gray-200" },
   };
   const { label, className } = map[status];
