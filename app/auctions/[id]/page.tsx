@@ -5,6 +5,7 @@ import { fetchListingDetail } from "@/lib/catalog.api";
 import type { ListingDetail } from "@/types/catalog";
 import ListingGallery from "@/components/catalog/ListingGallery";
 import AuctionCountdown from "@/components/catalog/AuctionCountdown";
+import { placeBid } from "@/lib/bidding.api";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -31,8 +32,8 @@ function formatDate(iso: string | null): string {
 
 function StatusBadge({ status }: { status: ListingDetail["status"] }) {
   const map: Record<ListingDetail["status"], { label: string; className: string }> = {
-    DRAFT:  { label: "Draft",    className: "bg-yellow-100 text-yellow-700 border-yellow-200" },
-    ACTIVE: { label: "Aktif",    className: "bg-green-100 text-green-700 border-green-200" },
+    DRAFT: { label: "Draft", className: "bg-yellow-100 text-yellow-700 border-yellow-200" },
+    ACTIVE: { label: "Aktif", className: "bg-green-100 text-green-700 border-green-200" },
     CLOSED: { label: "Ditutup", className: "bg-gray-100 text-gray-500 border-gray-200" },
   };
   const { label, className } = map[status];
@@ -80,8 +81,25 @@ function DetailSkeleton() {
 
 function BidCard({ listing }: { listing: ListingDetail }) {
   const [bidAmount, setBidAmount] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const canBid = listing.auctionOngoing && listing.status === "ACTIVE";
   const minBid = listing.currentPrice + listing.minimumIncrement;
+
+  const handlePlaceBid = async () => {
+    if (!bidAmount || Number(bidAmount) < minBid) return;
+
+    setIsSubmitting(true);
+    try {
+      const idempotencyKey = crypto.randomUUID();
+      await placeBid(listing.id, Number(bidAmount), idempotencyKey);
+      setBidAmount("");
+    } catch (error) {
+      alert(error instanceof Error ? error.message : "Gagal melakukan penawaran");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <div className="sticky top-6 rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
@@ -162,13 +180,11 @@ function BidCard({ listing }: { listing: ListingDetail }) {
           className="w-full rounded-xl bg-black/5 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-[#002447]/25 disabled:cursor-not-allowed disabled:opacity-50"
         />
         <button
-          disabled={!canBid}
+          disabled={!canBid || isSubmitting}
+          onClick={handlePlaceBid}
           className="w-full rounded-xl bg-[#002447] py-3 text-sm font-semibold text-white transition-colors hover:bg-[#003b70] disabled:cursor-not-allowed disabled:opacity-50"
-          onClick={() => {
-            // TODO: sambungkan ke Bidding Service
-          }}
         >
-          {canBid ? "Tempatkan Penawaran (Bid)" : "Penawaran Tidak Tersedia"}
+          {isSubmitting ? "Memproses..." : canBid ? "Tempatkan Penawaran (Bid)" : "Penawaran Tidak Tersedia"}
         </button>
         {canBid && (
           <p className="text-center text-xs text-gray-400">
