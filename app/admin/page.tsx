@@ -378,7 +378,7 @@ export default function AdminDashboardPage() {
                                     <div>
                                         <p className="text-sm font-semibold text-[#002447]">Listing moderation</p>
                                         <p className="mt-1 text-xs text-black/55">
-                                            {activitySummary?.moderationScope || "Catalog service owns listing moderation execution."}
+                                            {activitySummary?.moderationScope || ""}
                                         </p>
                                     </div>
                                     <button
@@ -445,7 +445,7 @@ export default function AdminDashboardPage() {
                             <div className="rounded-md border border-[#002447]/10 bg-[#f6f4ef] p-3">
                                 <p className="text-sm font-semibold text-[#002447]">Dispute support</p>
                                 <p className="mt-1 text-xs text-black/55">
-                                    {activitySummary?.disputeScope || "Order service owns dispute execution."}
+                                    {activitySummary?.disputeScope || ""}
                                 </p>
                                 <div className="mt-3 space-y-2">
                                     <input
