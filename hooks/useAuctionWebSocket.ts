@@ -30,8 +30,12 @@ export function useAuctionWebSocket({ auctionId, onBidPlaced }: WebSocketArgs) {
             client.subscribe(`/topic/auctions/${auctionId}`, (message) => {
                 if (message.body) {
                     try {
-                        const eventData = JSON.parse(message.body);
-                        onBidPlacedRef.current(eventData);
+                        const payload = JSON.parse(message.body);
+                        const eventData = payload?.type === "NEW_BID" ? payload.data : payload;
+
+                        if (eventData?.amount !== undefined) {
+                            onBidPlacedRef.current(eventData);
+                        }
                     } catch (error) {
                         console.error("[WebSocket] Gagal parsing payload:", error);
                     }

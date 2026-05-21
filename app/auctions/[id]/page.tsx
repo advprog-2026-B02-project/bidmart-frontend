@@ -105,6 +105,7 @@ function BidCard({
   const minBid = auction?.minimumNextBid ?? currentPrice + listing.minimumIncrement;
   const auctionStatus = auction?.status ?? listing.status;
   const canBid =
+    Boolean(auction?.id) &&
     listing.auctionOngoing &&
     (auctionStatus === "ACTIVE" || auctionStatus === "EXTENDED");
 
@@ -258,6 +259,53 @@ export default function ListingDetailPage({ params }: PageProps) {
   const [error, setError] = useState<string | null>(null);
   const [bidMessage, setBidMessage] = useState<BidMessage>(null);
 
+  const refreshAuctionState = useCallback(async () => {
+    const auctionRes = await fetch(`/api/bidding/auctions/listings/${id}`, {
+      cache: "no-store",
+    });
+
+    if (!auctionRes.ok) {
+      setAuction(null);
+      setBidHistory([]);
+      return;
+    }
+
+    const auctionData = (await auctionRes.json()) as AuctionResponse;
+    setAuction(auctionData);
+    setBidAmount(auctionData.minimumNextBid);
+
+    const bidRes = await fetch(`/api/bidding/auctions/${auctionData.id}/bids`, {
+      cache: "no-store",
+    });
+
+    if (bidRes.ok) {
+      const bidData = await bidRes.json();
+      const bids = Array.isArray(bidData) ? bidData : bidData.content ?? [];
+      setBidHistory(bids);
+      setListing((prev) =>
+        prev
+          ? {
+              ...prev,
+              currentPrice: auctionData.currentPrice,
+              bidCount: bidData.totalElements ?? bids.length ?? prev.bidCount,
+              auctionEndTime: auctionData.endTime,
+            }
+          : prev
+      );
+    } else {
+      setBidHistory([]);
+      setListing((prev) =>
+        prev
+          ? {
+              ...prev,
+              currentPrice: auctionData.currentPrice,
+              auctionEndTime: auctionData.endTime,
+            }
+          : prev
+      );
+    }
+  }, [id]);
+
   const loadListing = useCallback(() => {
     let isMounted = true;
 
@@ -275,25 +323,36 @@ export default function ListingDetailPage({ params }: PageProps) {
           setLoading(false);
         }
 
-        const auctionRes = await fetch(`/api/bidding/auctions/${id}`, {
+        const auctionRes = await fetch(`/api/bidding/auctions/listings/${id}`, {
           cache: "no-store",
         });
+        let resolvedAuctionId: string | null = null;
+
         if (auctionRes.ok) {
           const auctionData = (await auctionRes.json()) as AuctionResponse;
           if (isMounted) {
             setAuction(auctionData);
             setBidAmount(auctionData.minimumNextBid);
           }
+          resolvedAuctionId = auctionData.id;
+        } else if (isMounted) {
+          setAuction(null);
         }
 
-        const bidRes = await fetch(`/api/bidding/auctions/${id}/bids`, {
-          cache: "no-store",
-        });
-        if (bidRes.ok) {
-          const bidData = await bidRes.json();
-          if (isMounted) {
-            setBidHistory(Array.isArray(bidData) ? bidData : bidData.content ?? []);
+        if (resolvedAuctionId) {
+          const bidRes = await fetch(`/api/bidding/auctions/${resolvedAuctionId}/bids`, {
+            cache: "no-store",
+          });
+          if (bidRes.ok) {
+            const bidData = await bidRes.json();
+            if (isMounted) {
+              setBidHistory(Array.isArray(bidData) ? bidData : bidData.content ?? []);
+            }
+          } else if (isMounted) {
+            setBidHistory([]);
           }
+        } else if (isMounted) {
+          setBidHistory([]);
         }
       } catch (err) {
         if (isMounted) {
@@ -320,7 +379,7 @@ export default function ListingDetailPage({ params }: PageProps) {
   }, [loadListing]);
 
   useAuctionWebSocket({
-    auctionId: id,
+    auctionId: auction?.id ?? "",
     onBidPlaced: (eventData) => {
       const incrementValue = listing?.minimumIncrement ?? 10000;
 
@@ -331,6 +390,7 @@ export default function ListingDetailPage({ params }: PageProps) {
               currentPrice: eventData.amount,
               minimumNextBid: eventData.amount + incrementValue,
               highestBidderId: eventData.bidderId,
+              endTime: eventData.auctionEndTime ?? prev.endTime,
             }
           : prev
       );
@@ -341,12 +401,28 @@ export default function ListingDetailPage({ params }: PageProps) {
               ...prev,
               currentPrice: eventData.amount,
               bidCount: eventData.bidCount ?? prev.bidCount + 1,
+              auctionEndTime: eventData.auctionEndTime ?? prev.auctionEndTime,
             }
           : prev
       );
 
       setBidAmount(eventData.amount + incrementValue);
-      setBidHistory((prev) => [eventData, ...prev]);
+      setBidHistory((prev) => {
+        if (eventData.id && prev.some((bid) => bid.id === eventData.id)) {
+          return prev;
+        }
+
+        const latest = prev[0];
+        if (
+          !eventData.id &&
+          latest?.amount === eventData.amount &&
+          latest?.bidderId === eventData.bidderId
+        ) {
+          return prev;
+        }
+
+        return [eventData, ...prev];
+      });
     },
   });
 
@@ -364,6 +440,14 @@ export default function ListingDetailPage({ params }: PageProps) {
       const minBidRequired =
         auction?.minimumNextBid ?? listing.currentPrice + listing.minimumIncrement;
 
+      if (!auction?.id) {
+        setBidMessage({
+          type: "error",
+          text: "Auction belum tersedia untuk listing ini.",
+        });
+        return;
+      }
+
       if (bidAmount < minBidRequired) {
         setBidMessage({
           type: "error",
@@ -376,9 +460,17 @@ export default function ListingDetailPage({ params }: PageProps) {
         setIsSubmitting(true);
         setBidMessage(null);
 
-        const res = await fetch(`/api/bidding/auctions/${id}/bids`, {
+        const idempotencyKey =
+          typeof crypto !== "undefined" && "randomUUID" in crypto
+            ? crypto.randomUUID()
+            : `${id}-${Date.now()}-${Math.random()}`;
+
+        const res = await fetch(`/api/bidding/auctions/${auction.id}/bids`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            "Idempotency-Key": idempotencyKey,
+          },
           body: JSON.stringify({ amount: bidAmount }),
         });
 
@@ -391,6 +483,40 @@ export default function ListingDetailPage({ params }: PageProps) {
               "Gagal mengajukan penawaran."
           );
         }
+
+        const placedBid = data as Partial<BidResponse>;
+        if (placedBid.amount !== undefined) {
+          const nextBid = placedBid.amount + listing.minimumIncrement;
+          setAuction((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  currentPrice: placedBid.amount ?? prev.currentPrice,
+                  minimumNextBid: nextBid,
+                  highestBidderId: placedBid.bidderId ?? prev.highestBidderId,
+                  endTime: placedBid.auctionEndTime ?? prev.endTime,
+                }
+              : prev
+          );
+          setListing((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  currentPrice: placedBid.amount ?? prev.currentPrice,
+                  bidCount: prev.bidCount + 1,
+                  auctionEndTime: placedBid.auctionEndTime ?? prev.auctionEndTime,
+                }
+              : prev
+          );
+          setBidAmount(nextBid);
+          setBidHistory((prev) =>
+            placedBid.id
+              ? [placedBid, ...prev.filter((bid) => bid.id !== placedBid.id)]
+              : prev
+          );
+        }
+
+        await refreshAuctionState();
 
         setBidMessage({
           type: "success",
@@ -405,7 +531,7 @@ export default function ListingDetailPage({ params }: PageProps) {
         setIsSubmitting(false);
       }
     },
-    [auction, bidAmount, id, listing, router, user]
+    [auction, bidAmount, id, listing, refreshAuctionState, router, user]
   );
 
   if (loading) {
