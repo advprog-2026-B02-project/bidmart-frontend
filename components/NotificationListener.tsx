@@ -12,13 +12,9 @@ export default function NotificationListener() {
 
     useEffect(() => {
         if (!user) return;
-
-        const notificationWsUrl =
-            process.env.NEXT_PUBLIC_NOTIFICATION_WS_URL ??
-            "http://localhost:8086/api/notifications/ws/notifications";
             
         const client = new Client({
-            webSocketFactory: () => new SockJS(notificationWsUrl),
+            webSocketFactory: () => new SockJS("/api/notifications/ws/notifications"),
 
             connectHeaders: {
                 "X-User-Id": user.id,
