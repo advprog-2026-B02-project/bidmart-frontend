@@ -72,6 +72,19 @@ export async function proxyRequest(
 
         const body = response.status === 204 || response.status === 304 ? null : text;
 
+        // if backend returned JSON, parse and return structured JSON to avoid double-encoded JSON strings
+        if (body && contentType && contentType.includes('application/json')) {
+            try {
+                const json = JSON.parse(body);
+                return NextResponse.json(json, {
+                    status: response.status,
+                    headers,
+                });
+            } catch (err) {
+                // fall back to raw text if parsing fails
+            }
+        }
+
         return new NextResponse(body, {
             status: response.status,
             headers,
