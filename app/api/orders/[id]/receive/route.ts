@@ -1,32 +1,31 @@
 import { NextRequest, NextResponse } from "next/server";
 import { fetchInternal } from "@/lib/fetcher";
- 
-const ORDER_SERVICE_URL = process.env.ORDER_SERVICE_URL ?? "http://localhost:8086";
- 
+
+const ORDER_SERVICE_URL =
+  process.env.ORDER_SERVICE_URL ?? "http://localhost:8086";
+
 export async function PUT(
-  _req: NextRequest,
+  _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
-) {
+): Promise<NextResponse> {
+  const { id } = await params;
+
   try {
-    const { id } = await params;
-    const backendRes = await fetchInternal(
-      `/api/v1/orders/${id}/receive`,
-      {
-        serviceUrl: ORDER_SERVICE_URL,
-        method: "PUT",
-      }
-    );
- 
+    const backendRes = await fetchInternal(`/api/v1/orders/${id}/receive`, {
+      serviceUrl: ORDER_SERVICE_URL,
+      method: "PUT",
+    });
+
     if (backendRes.status === 200) {
       return new NextResponse(null, { status: 200 });
     }
- 
-    const data = await backendRes.json().catch(() => ({}));
-    return NextResponse.json(data, { status: backendRes.status });
-  } catch (err) {
-    console.error("[BFF /api/orders/:id/receive PUT]", err);
+
+    const data: unknown = await backendRes.json().catch(() => null);
+    return NextResponse.json(data ?? {}, { status: backendRes.status });
+  } catch (error) {
+    console.error(`[BFF PUT /api/orders/${id}/receive] Error:`, error);
     return NextResponse.json(
-      { message: "Gagal mengkonfirmasi penerimaan pesanan." },
+      { message: "Terjadi kesalahan saat mengkonfirmasi penerimaan." },
       { status: 500 }
     );
   }

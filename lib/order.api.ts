@@ -1,86 +1,114 @@
+import type { OrderListParams, OrderListResponse, OrderDetail, ShipOrderPayload, DisputePayload } from "@/types/order";
 
-import type {
-  OrderListResponse,
-  OrderDetail,
-  ShipOrderRequest,
-  DisputeOrderRequest,
-  OrderRole,
-} from "@/types/order";
- 
-async function handleResponse<T>(res: Response): Promise<T> {
-  if (!res.ok) {
-    let message = `Terjadi kesalahan (${res.status})`;
-    try {
-      const err = await res.json();
-      if (err?.message) message = err.message;
-      else if (err?.error) message = err.error;
-    } catch {
-    }
-    throw new Error(message);
-  }
-  const text = await res.text();
-  if (!text) return undefined as T;
-  return JSON.parse(text) as T;
-}
 
 export async function fetchOrders(
-  role: OrderRole,
-  page = 0,
-  size = 20
+  params: OrderListParams
 ): Promise<OrderListResponse> {
-  const params = new URLSearchParams({
-    role,
-    page: String(page),
-    size: String(size),
-  });
-  const res = await fetch(`/api/orders?${params.toString()}`, {
-    method: "GET",
-    headers: { "Content-Type": "application/json" },
+  const qs = new URLSearchParams();
+
+  qs.set("role", params.role);
+  if (params.status) qs.set("status", params.status);
+  if (params.page !== undefined) qs.set("page", String(params.page));
+  if (params.size !== undefined) qs.set("size", String(params.size));
+
+  const res = await fetch(`/api/orders?${qs.toString()}`, {
     cache: "no-store",
   });
-  return handleResponse<OrderListResponse>(res);
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(
+      (err as { message?: string }).message ??
+        `Gagal memuat daftar pesanan (HTTP ${res.status})`
+    );
+  }
+
+  return res.json() as Promise<OrderListResponse>;
 }
 
-export async function fetchOrderDetail(orderId: string): Promise<OrderDetail> {
-  const res = await fetch(`/api/orders/${orderId}`, {
-    method: "GET",
-    headers: { "Content-Type": "application/json" },
-    cache: "no-store",
-  });
-  return handleResponse<OrderDetail>(res);
+export async function fetchOrderDetail(id: string): Promise<OrderDetail> {
+  const res = await fetch(`/api/orders/${id}`, { cache: "no-store" });
+
+  if (res.status === 403) {
+    throw new Error("Kamu tidak punya akses ke pesanan ini.");
+  }
+  if (res.status === 404) {
+    throw new Error("Pesanan tidak ditemukan.");
+  }
+  if (!res.ok) {
+    throw new Error(`Gagal memuat detail pesanan (HTTP ${res.status})`);
+  }
+
+  return res.json() as Promise<OrderDetail>;
 }
- 
-// Ship Order (Seller) 
+
 export async function shipOrder(
-  orderId: string,
-  body: ShipOrderRequest
+  id: string,
+  payload: ShipOrderPayload
 ): Promise<void> {
-  const res = await fetch(`/api/orders/${orderId}/ship`, {
+  const res = await fetch(`/api/orders/${id}/ship`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
+    body: JSON.stringify(payload),
   });
-  return handleResponse<void>(res);
+
+  if (res.status === 400) {
+    throw new Error("Pesanan belum berstatus PACKAGED atau data tidak valid.");
+  }
+  if (res.status === 403) {
+    throw new Error("Kamu bukan penjual pesanan ini.");
+  }
+  if (!res.ok && res.status !== 200) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(
+      (err as { message?: string }).message ??
+        `Gagal mengupdate pengiriman (HTTP ${res.status})`
+    );
+  }
 }
- 
-// Receive Order (Buyer) 
-export async function receiveOrder(orderId: string): Promise<void> {
-  const res = await fetch(`/api/orders/${orderId}/receive`, {
+
+export async function receiveOrder(id: string): Promise<void> {
+  const res = await fetch(`/api/orders/${id}/receive`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
   });
-  return handleResponse<void>(res);
+
+  if (res.status === 400) {
+    throw new Error("Pesanan belum berstatus SHIPPED.");
+  }
+  if (res.status === 403) {
+    throw new Error("Kamu bukan pembeli pesanan ini.");
+  }
+  if (!res.ok && res.status !== 200) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(
+      (err as { message?: string }).message ??
+        `Gagal mengkonfirmasi penerimaan (HTTP ${res.status})`
+    );
+  }
 }
- 
-// Dispute Order (Buyer) 
-export async function disputeOrder(
-  orderId: string,
-  body: DisputeOrderRequest
+
+export async function createDispute(
+  id: string,
+  payload: DisputePayload
 ): Promise<void> {
-  const res = await fetch(`/api/orders/${orderId}/dispute`, {
+  const res = await fetch(`/api/orders/${id}/dispute`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
+    body: JSON.stringify(payload),
   });
-  return handleResponse<void>(res);
+
+  if (res.status === 400) {
+    throw new Error("Pesanan belum berstatus SHIPPED atau data tidak valid.");
+  }
+  if (res.status === 403) {
+    throw new Error("Kamu bukan pembeli pesanan ini.");
+  }
+  if (!res.ok && res.status !== 200) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(
+      (err as { message?: string }).message ??
+        `Gagal mengajukan komplain (HTTP ${res.status})`
+    );
+  }
 }

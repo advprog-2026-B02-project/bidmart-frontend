@@ -12,7 +12,7 @@ export default function NotificationListener() {
 
     useEffect(() => {
         if (!user) return;
-
+            
         const client = new Client({
             webSocketFactory: () => new SockJS("/api/notifications/ws/notifications"),
 

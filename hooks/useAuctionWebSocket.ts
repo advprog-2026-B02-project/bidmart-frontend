@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef } from "react";
 import SockJS from "sockjs-client";
 import { Client } from "@stomp/stompjs";
 import { BidResponse } from "@/types/bidding";
@@ -11,13 +11,17 @@ interface WebSocketArgs {
 }
 
 export function useAuctionWebSocket({ auctionId, onBidPlaced }: WebSocketArgs) {
-    const [stompClient, setStompClient] = useState<Client | null>(null);
+    const onBidPlacedRef = useRef(onBidPlaced);
+
+    useEffect(() => {
+        onBidPlacedRef.current = onBidPlaced;
+    }, [onBidPlaced]);
 
     useEffect(() => {
         if (!auctionId) return;
 
         const client = new Client({
-            webSocketFactory: () => new SockJS("/api/bidding/ws-auction"),
+            webSocketFactory: () => new SockJS("/ws-bidding", null, { transports: ["websocket"] }),
             debug: () => { },
             reconnectDelay: 5000,
         });
@@ -27,7 +31,7 @@ export function useAuctionWebSocket({ auctionId, onBidPlaced }: WebSocketArgs) {
                 if (message.body) {
                     try {
                         const eventData = JSON.parse(message.body);
-                        onBidPlaced(eventData);
+                        onBidPlacedRef.current(eventData);
                     } catch (error) {
                         console.error("[WebSocket] Gagal parsing payload:", error);
                     }
@@ -37,16 +41,8 @@ export function useAuctionWebSocket({ auctionId, onBidPlaced }: WebSocketArgs) {
 
         client.activate();
 
-        const timer = setTimeout(() => {
-            setStompClient(client);
-        }, 0);
-
         return () => {
-            clearTimeout(timer);
             client.deactivate();
-            setStompClient(null);
         };
-    }, [auctionId, onBidPlaced]);
-
-    return stompClient;
+    }, [auctionId]);
 }

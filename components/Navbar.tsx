@@ -24,7 +24,9 @@ export default function Navbar() {
             {href: "/orders", label: "Pesanan"},
             {href: "/notifications", label: "Notifikasi"},
         ] : []),
-        ...(user && canAccessSellerArea(roles) ? [{href: "/seller/listings", label: "Penjual"}] : []),
+        ...(user && canAccessSellerArea(roles) ? [
+            {href: "/seller/listings", label: "Penjual"},
+            {href: "/seller/orders", label: "Pesanan Toko"},] : []),
         ...(user && canAccessAdminArea(roles) ? [{href: "/admin", label: "Admin"}] : []),
     ];
 

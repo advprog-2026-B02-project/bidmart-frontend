@@ -4,7 +4,7 @@ export interface CatalogImage {
   thumbnailUrl: string | null;
   displayOrder: number;
 }
- 
+
 export interface Pageable {
   pageNumber: number;
   pageSize: number;
@@ -12,7 +12,6 @@ export interface Pageable {
   paged: boolean;
   unpaged: boolean;
 }
- 
 
 export interface CatalogItem {
   id: string;
@@ -28,7 +27,7 @@ export interface CatalogItem {
 }
 
 export type ListingStatus = "DRAFT" | "ACTIVE" | "CLOSED";
- 
+
 export interface CatalogPageResponse {
   content: CatalogItem[];
   pageable: Pageable;
@@ -40,7 +39,7 @@ export interface CatalogPageResponse {
   first: boolean;
   empty: boolean;
 }
- 
+
 export interface ListingDetail {
   id: string;
   sellerId: string;
@@ -51,8 +50,11 @@ export interface ListingDetail {
   description: string | null;
   status: ListingStatus;
   startingPrice: number;
+  reservePrice: number | null;
   currentPrice: number;
   minimumIncrement: number;
+  /** Durasi lelang dalam detik, sebagaimana dikirim saat pembuatan listing. */
+  auctionDuration: number;
   bidCount: number;
   createdAt: string;
   activatedAt: string | null;
@@ -60,7 +62,7 @@ export interface ListingDetail {
   auctionOngoing: boolean;
   images: CatalogImage[];
 }
- 
+
 export interface Category {
   id: string;
   name: string;
@@ -68,7 +70,7 @@ export interface Category {
   parentId: string | null;
   children?: Category[];
 }
- 
+
 export interface CatalogQueryParams {
   q?: string;
   category?: string;

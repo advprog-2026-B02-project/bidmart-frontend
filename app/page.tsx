@@ -86,7 +86,7 @@ export default function HomePage() {
               </Link>
               {canAccessSellerArea(user.roles) && (
                 <Link
-                  href="/seller/listings/new"
+                  href="/seller/listings"
                   className="rounded-lg bg-bidnavy px-4 py-2 text-sm font-bold text-white shadow-sm hover:bg-bidnavy2"
                 >
                   Buat Lelang
