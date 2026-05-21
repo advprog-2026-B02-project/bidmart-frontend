@@ -70,7 +70,9 @@ export async function proxyRequest(
             headers.set('set-cookie', setCookie);
         }
 
-        return new NextResponse(text, {
+        const body = response.status === 204 || response.status === 304 ? null : text;
+
+        return new NextResponse(body, {
             status: response.status,
             headers,
         });
