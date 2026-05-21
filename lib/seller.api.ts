@@ -77,7 +77,7 @@ export async function editListing(
   id: string,
   payload: EditListingPayload
 ): Promise<ListingDetail> {
-  const res = await fetch(`/api/seller/listings/${id}`, {
+  const res = await fetch(`/api/seller/listings/${id}/edit`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
