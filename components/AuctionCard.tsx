@@ -2,6 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { CatalogItem } from "@/types/catalog";
 
 interface AuctionCardProps {
@@ -40,10 +41,14 @@ export default function AuctionCard({ listing }: AuctionCardProps) {
             {/* Container Gambar / Thumbnail */}
             <div className="aspect-square w-full bg-bidcream overflow-hidden relative">
                 {listing.thumbnailUrl ? (
-                    <img
+                    <Image
                         src={listing.thumbnailUrl}
                         alt={listing.title}
+                        fill
+                        sizes="100vw"
                         className="h-full w-full object-cover object-center transition-transform duration-300 group-hover:scale-105"
+                        priority={false}
+                        unoptimized={false}
                     />
                 ) : (
                     <div className="flex h-full w-full items-center justify-center bg-gray-100 text-xs font-medium text-gray-400">

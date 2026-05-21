@@ -152,16 +152,24 @@ export default function NotificationPreferencesPage() {
         if (!user) return;
         let isCancelled = false;
 
-        setIsLoading(true);
-        setLoadError(null);
-
-        getPreferences()
-            .then((data) => { if (!isCancelled) { setPrefs(data); setIsLoading(false); } })
-            .catch((err) => {
-                if (!isCancelled) { setLoadError("Gagal memuat preferensi."); setIsLoading(false); }
+        const fetchAsync = async () => {
+            setIsLoading(true);
+            setLoadError(null);
+            try {
+                const data = await getPreferences();
+                if (!isCancelled) {
+                    setPrefs(data);
+                    setIsLoading(false);
+                }
+            } catch (err) {
+                if (!isCancelled) {
+                    setLoadError("Gagal memuat preferensi.");
+                    setIsLoading(false);
+                }
                 console.error(err);
-            });
-
+            }
+        };
+        fetchAsync();
         return () => { isCancelled = true; };
     }, [user]);
 

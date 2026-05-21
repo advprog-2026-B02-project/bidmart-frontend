@@ -8,6 +8,7 @@ export interface BidResponseDTO {
     id: string;
     auctionId: string;
     bidderId: string;
+    bidderDisplay?: string;
     amount: number;
     status: string;
     previousHighBid?: number;

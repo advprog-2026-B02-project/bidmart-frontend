@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import {
     getNotifications,
@@ -159,17 +159,25 @@ export default function NotificationsPage() {
         let isCancelled = false;
         if (!user) return;
 
-        setIsLoading(true);
-        setError(null);
-        const readParam = filter === "unread" ? false : undefined;
-
-        getNotifications(readParam, 0, 50)
-            .then((result) => { if (!isCancelled) { setData(result); setIsLoading(false); } })
-            .catch((err) => {
-                if (!isCancelled) { setError("Gagal memuat notifikasi."); setIsLoading(false); }
+        const fetchAsync = async () => {
+            setIsLoading(true);
+            setError(null);
+            const readParam = filter === "unread" ? false : undefined;
+            try {
+                const result = await getNotifications(readParam, 0, 50);
+                if (!isCancelled) {
+                    setData(result);
+                    setIsLoading(false);
+                }
+            } catch (err) {
+                if (!isCancelled) {
+                    setError("Gagal memuat notifikasi.");
+                    setIsLoading(false);
+                }
                 console.error(err);
-            });
-
+            }
+        };
+        fetchAsync();
         return () => { isCancelled = true; };
     }, [user, filter]);
 

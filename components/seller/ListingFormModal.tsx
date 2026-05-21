@@ -122,7 +122,7 @@ export default function ListingFormModal({
         return next;
       });
     },
-    []
+    [setForm, setValidationErrors]
   );
 
   const handleImageChange = useCallback(
@@ -136,16 +136,16 @@ export default function ListingFormModal({
         return next;
       });
     },
-    []
+    [setImageRows, setValidationErrors]
   );
 
   const handleAddImage = useCallback(() => {
     setImageRows((prev) => [...prev, { ...EMPTY_IMAGE_ROW }]);
-  }, []);
+  }, [setImageRows]);
 
   const handleRemoveImage = useCallback((index: number) => {
     setImageRows((prev) => prev.filter((_, i) => i !== index));
-  }, []);
+  }, [setImageRows]);
 
   function validate(): boolean {
     const errors: Partial<Record<keyof FormState | "images", string>> = {};
@@ -243,7 +243,7 @@ export default function ListingFormModal({
     } finally {
       setSubmitLoading(false);
     }
-  }, [form, imageRows, isEdit, listingToEdit, onSuccess]);
+  }, [form, isEdit, listingToEdit, onSuccess, buildImages, validate]);
 
   function renderCategoryOptions() {
     return categories.map((root) => {

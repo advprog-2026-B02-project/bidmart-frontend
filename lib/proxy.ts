@@ -80,7 +80,7 @@ export async function proxyRequest(
                     status: response.status,
                     headers,
                 });
-            } catch (err) {
+            } catch {
                 // fall back to raw text if parsing fails
             }
         }
