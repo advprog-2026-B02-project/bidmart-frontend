@@ -1,8 +1,34 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
+import type { Category } from "@/types/catalog";
+
+type CategoryOption = {
+    id: string;
+    name: string;
+    depth: number;
+};
+
+function flattenCategories(categories: Category[], depth = 0): CategoryOption[] {
+    return categories.flatMap((category) => [
+        { id: category.id, name: category.name, depth },
+        ...flattenCategories(category.children ?? [], depth + 1),
+    ]);
+}
+
+async function readErrorMessage(res: Response, fallback: string): Promise<string> {
+    const responseText = await res.text();
+    if (!responseText) return fallback;
+
+    try {
+        const data = JSON.parse(responseText) as { error?: string; message?: string; detail?: string; title?: string };
+        return data.message || data.detail || data.title || data.error || fallback;
+    } catch {
+        return responseText;
+    }
+}
 
 export default function NewListingPage() {
     const { user, isLoading: authLoading } = useAuth();
@@ -17,8 +43,74 @@ export default function NewListingPage() {
     const [auctionDuration, setAuctionDuration] = useState<number>(3600);
     const [imageUrl, setImageUrl] = useState("");
 
+    const [categories, setCategories] = useState<Category[]>([]);
+    const [isLoadingCategories, setIsLoadingCategories] = useState(true);
+    const [isCreatingCategory, setIsCreatingCategory] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
+
+    const categoryOptions = useMemo(() => flattenCategories(categories), [categories]);
+
+    useEffect(() => {
+        let isActive = true;
+
+        async function loadCategories() {
+            try {
+                setIsLoadingCategories(true);
+                const res = await fetch("/api/categories", { cache: "no-store" });
+                if (!res.ok) {
+                    throw new Error(await readErrorMessage(res, "Gagal memuat kategori."));
+                }
+
+                const data = (await res.json()) as Category[];
+                if (!isActive) return;
+
+                setCategories(data);
+                const options = flattenCategories(data);
+                if (options.length > 0) {
+                    setCategoryId((current) => current || options[0].id);
+                }
+            } catch (err) {
+                if (!isActive) return;
+                const error = err as Error;
+                setError(error.message || "Gagal memuat kategori.");
+            } finally {
+                if (isActive) setIsLoadingCategories(false);
+            }
+        }
+
+        loadCategories();
+
+        return () => {
+            isActive = false;
+        };
+    }, []);
+
+    const createDefaultCategory = async () => {
+        setError(null);
+        setIsCreatingCategory(true);
+
+        try {
+            const res = await fetch("/api/catalog/admin/categories", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ name: "Umum", slug: "umum" }),
+            });
+
+            if (!res.ok) {
+                throw new Error(await readErrorMessage(res, "Gagal membuat kategori."));
+            }
+
+            const category = (await res.json()) as Category;
+            setCategories((current) => [...current, category]);
+            setCategoryId(category.id);
+        } catch (err) {
+            const error = err as Error;
+            setError(error.message || "Gagal membuat kategori.");
+        } finally {
+            setIsCreatingCategory(false);
+        }
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -31,12 +123,18 @@ export default function NewListingPage() {
             return;
         }
 
+        if (!categoryId) {
+            setError("Pilih kategori dulu sebelum menyimpan listing.");
+            setIsSubmitting(false);
+            return;
+        }
+
         const payload = {
-            categoryId: categoryId || "00000000-0000-0000-0000-000000000000",
+            categoryId,
             title,
             description: description || null,
             startingPrice,
-            reservePrice,
+            reservePrice: reservePrice || null,
             minimumIncrement,
             auctionDuration,
             images: imageUrl
@@ -51,16 +149,9 @@ export default function NewListingPage() {
                 body: JSON.stringify(payload),
             });
 
-            const responseText = await res.text();
-            let data: { error?: string; message?: string } = {};
-            try {
-                data = responseText ? JSON.parse(responseText) : {};
-            } catch {
-                data = { message: responseText };
-            }
-
             if (!res.ok) {
-                throw new Error(data.error || data.message || "Gagal membuat listing lelang baru.");
+                const message = await readErrorMessage(res, "Gagal membuat listing lelang baru.");
+                throw new Error(message === "Not Found" ? "Kategori tidak ditemukan. Pilih kategori yang tersedia." : message);
             }
 
             router.push("/seller/listings");
@@ -121,16 +212,36 @@ export default function NewListingPage() {
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <div>
                         <label htmlFor="category" className="block text-sm font-bold text-gray-700 mb-1 uppercase tracking-wide">
-                            ID Kategori (UUID)
+                            Kategori <span className="text-red-500">*</span>
                         </label>
-                        <input
+                        <select
                             id="category"
-                            type="text"
+                            required
                             value={categoryId}
                             onChange={(e) => setCategoryId(e.target.value)}
-                            placeholder="Masukkan UUID Kategori produk"
-                            className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-bidnavy focus:outline-none focus:ring-2 focus:ring-bidnavy"
-                        />
+                            disabled={isLoadingCategories || categoryOptions.length === 0}
+                            className="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-bidnavy focus:outline-none focus:ring-2 focus:ring-bidnavy disabled:bg-gray-100 disabled:text-gray-500"
+                        >
+                            {isLoadingCategories && <option value="">Memuat kategori...</option>}
+                            {!isLoadingCategories && categoryOptions.length === 0 && (
+                                <option value="">Belum ada kategori</option>
+                            )}
+                            {!isLoadingCategories && categoryOptions.map((category) => (
+                                <option key={category.id} value={category.id}>
+                                    {"--".repeat(category.depth)} {category.name}
+                                </option>
+                            ))}
+                        </select>
+                        {!isLoadingCategories && categoryOptions.length === 0 && (
+                            <button
+                                type="button"
+                                onClick={createDefaultCategory}
+                                disabled={isCreatingCategory}
+                                className="mt-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-bidcream disabled:opacity-50"
+                            >
+                                {isCreatingCategory ? "Membuat kategori..." : "Buat kategori Umum"}
+                            </button>
+                        )}
                     </div>
 
                     <div>

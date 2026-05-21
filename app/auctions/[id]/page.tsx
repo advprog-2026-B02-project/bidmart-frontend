@@ -19,6 +19,7 @@ export default function AuctionDetailPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+    const [now, setNow] = useState(() => Date.now());
 
     const fetchAuctionDetail = useCallback(async () => {
         try {
@@ -59,6 +60,11 @@ export default function AuctionDetailPage() {
             return () => clearTimeout(timer);
         }
     }, [id, fetchAuctionDetail]);
+
+    useEffect(() => {
+        const timer = window.setInterval(() => setNow(Date.now()), 1000);
+        return () => window.clearInterval(timer);
+    }, []);
 
     useAuctionWebSocket({
         auctionId: id as string,
@@ -150,6 +156,11 @@ export default function AuctionDetailPage() {
         }).format(price);
     };
 
+    const isListingExpired =
+        listing?.status === "ACTIVE" &&
+        (listing.auctionOngoing === false ||
+            (listing.auctionEndTime && new Date(listing.auctionEndTime).getTime() <= now));
+
     if (isLoading) {
         return <div className="text-center py-20 text-sm text-gray-500 animate-pulse">Memuat ruang lelang...</div>;
     }
@@ -158,7 +169,7 @@ export default function AuctionDetailPage() {
         return <div className="text-center py-20 text-sm text-red-500">Barang lelang tidak ditemukan.</div>;
     }
 
-    const currentAuctionStatus = auction ? auction.status : listing.status;
+    const currentAuctionStatus = isListingExpired ? "CLOSED" : (auction ? auction.status : listing.status);
 
     return (
         <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10">

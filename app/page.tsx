@@ -7,6 +7,11 @@ import AuctionCard from "@/components/AuctionCard";
 import {useAuth} from "@/context/AuthContext";
 import {canAccessSellerArea} from "@/lib/navigation";
 
+function isAuctionOngoing(listing: CatalogItem): boolean {
+  if (listing.status !== "ACTIVE" || !listing.auctionEndTime) return false;
+  return new Date(listing.auctionEndTime).getTime() > Date.now();
+}
+
 export default function HomePage() {
   const {user} = useAuth();
   const [listings, setListings] = useState<CatalogItem[]>([]);
@@ -32,7 +37,7 @@ export default function HomePage() {
         }
 
         const data = await res.json();
-        setListings(data.content || []);
+        setListings((data.content || []).filter(isAuctionOngoing));
       } catch (err: unknown) {
         const error = err as Error;
         setError(error.message || "Terjadi kesalahan koneksi.");
@@ -42,6 +47,14 @@ export default function HomePage() {
     };
 
     fetchCatalog();
+  }, []);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setListings((current) => current.filter(isAuctionOngoing));
+    }, 1000);
+
+    return () => window.clearInterval(timer);
   }, []);
 
   return (

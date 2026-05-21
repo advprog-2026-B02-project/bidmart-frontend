@@ -6,6 +6,11 @@ import type { CatalogItem, Category, CatalogQueryParams } from "@/types/catalog"
 import CatalogCard from "@/components/catalog/CatalogCard";
 import CatalogCardSkeleton from "@/components/catalog/CatalogCardSkeleton";
 
+function isAuctionOngoing(item: CatalogItem): boolean {
+  if (item.status !== "ACTIVE" || !item.auctionEndTime) return false;
+  return new Date(item.auctionEndTime).getTime() > Date.now();
+}
+
 function FilterBar({
   query,
   onQueryChange,
@@ -227,7 +232,7 @@ export default function CatalogPage() {
         const data = await fetchCatalog(appliedParams);
  
         if (isMounted) {
-          setItems(data.content ?? []);
+          setItems((data.content ?? []).filter(isAuctionOngoing));
           setTotalPages(data.totalPages ?? 0);
           setCurrentPage(data.number ?? 0);
         }
@@ -251,6 +256,14 @@ export default function CatalogPage() {
       isMounted = false;
     };
   }, [appliedParams]);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setItems((current) => current.filter(isAuctionOngoing));
+    }, 1000);
+
+    return () => window.clearInterval(timer);
+  }, []);
 
   const handleApplyFilter = useCallback(() => {
     const params: CatalogQueryParams = { page: 0, size: 20 };

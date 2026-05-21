@@ -26,6 +26,8 @@ export interface CatalogItem {
   auctionEndTime: string | null;
   thumbnailUrl: string | null;
 }
+
+export type ListingStatus = "DRAFT" | "ACTIVE" | "CLOSED";
  
 export interface CatalogPageResponse {
   content: CatalogItem[];
@@ -47,7 +49,7 @@ export interface ListingDetail {
   categorySlug: string | null;
   title: string;
   description: string | null;
-  status: "DRAFT" | "ACTIVE" | "CLOSED";
+  status: ListingStatus;
   startingPrice: number;
   currentPrice: number;
   minimumIncrement: number;
@@ -64,6 +66,7 @@ export interface Category {
   name: string;
   slug: string | null;
   parentId: string | null;
+  children?: Category[];
 }
  
 export interface CatalogQueryParams {

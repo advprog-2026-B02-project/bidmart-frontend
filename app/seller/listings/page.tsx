@@ -3,7 +3,19 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
-import { ListingDetail } from "@/types/catalog";
+import { ListingDetail, ListingStatus } from "@/types/catalog";
+
+function getDisplayStatus(item: ListingDetail, now: number): ListingStatus {
+    if (
+        item.status === "ACTIVE" &&
+        (item.auctionOngoing === false ||
+            (item.auctionEndTime && new Date(item.auctionEndTime).getTime() <= now))
+    ) {
+        return "CLOSED";
+    }
+
+    return item.status;
+}
 
 export default function SellerDashboardPage() {
     const { user, isLoading: authLoading } = useAuth();
@@ -11,6 +23,7 @@ export default function SellerDashboardPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
+    const [now, setNow] = useState(() => Date.now());
 
     const fetchSellerListings = async () => {
         try {
@@ -41,6 +54,11 @@ export default function SellerDashboardPage() {
             return () => clearTimeout(timer);
         }
     }, [user]);
+
+    useEffect(() => {
+        const timer = window.setInterval(() => setNow(Date.now()), 1000);
+        return () => window.clearInterval(timer);
+    }, []);
 
     const handleActivate = async (listingId: string) => {
         try {
@@ -152,7 +170,10 @@ export default function SellerDashboardPage() {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-100 text-sm font-medium text-gray-900">
-                                {listings.map((item) => (
+                                {listings.map((item) => {
+                                    const displayStatus = getDisplayStatus(item, now);
+
+                                    return (
                                     <tr key={item.id} className="hover:bg-bidcream/70 transition-colors">
                                         <td className="py-4 px-6 flex items-center gap-4">
                                             <div className="h-12 w-12 flex-shrink-0 overflow-hidden rounded-lg border border-gray-100 bg-bidcream">
@@ -168,13 +189,13 @@ export default function SellerDashboardPage() {
                                         </td>
 
                                         <td className="py-4 px-6">
-                                            <span className={`inline-flex items-center rounded-md px-2 py-1 text-xs font-bold uppercase tracking-wide ${item.status === "ACTIVE"
+                                            <span className={`inline-flex items-center rounded-md px-2 py-1 text-xs font-bold uppercase tracking-wide ${displayStatus === "ACTIVE"
                                                 ? "bg-green-50 text-green-700 ring-1 ring-inset ring-green-600/10"
-                                                : item.status === "DRAFT"
+                                                : displayStatus === "DRAFT"
                                                     ? "bg-gray-100 text-gray-600"
                                                     : "bg-red-50 text-red-700 ring-1 ring-inset ring-red-600/10"
                                                 }`}>
-                                                {item.status}
+                                                {displayStatus === "CLOSED" ? "SELESAI" : displayStatus}
                                             </span>
                                         </td>
 
@@ -191,7 +212,7 @@ export default function SellerDashboardPage() {
                                                     Lihat Detail
                                                 </Link>
 
-                                                {item.status === "DRAFT" && (
+                                                {displayStatus === "DRAFT" && (
                                                     <button
                                                         onClick={() => handleActivate(item.id)}
                                                         disabled={actionLoadingId === item.id}
@@ -203,7 +224,8 @@ export default function SellerDashboardPage() {
                                             </div>
                                         </td>
                                     </tr>
-                                ))}
+                                    );
+                                })}
                             </tbody>
                         </table>
                     </div>
