@@ -2,7 +2,6 @@
 
 import {useEffect, useState} from "react";
 import {useRouter} from "next/navigation";
-import AuthShell from "@/components/AuthShell";
 import {ActiveSession, listActiveSessions, revokeSession} from "@/lib/api";
 
 export default function SessionsPage() {
@@ -49,12 +48,14 @@ export default function SessionsPage() {
         let cancelled = false;
 
         async function loadInitialSessions() {
+            setLoading(true);
+            setMsg(null);
+            setIsError(false);
+
             try {
                 const data = await listActiveSessions();
                 if (!cancelled) {
                     setSessions(data);
-                    setMsg(null);
-                    setIsError(false);
                 }
             } catch (err: unknown) {
                 if (!cancelled) {
@@ -75,81 +76,91 @@ export default function SessionsPage() {
     }, []);
 
     return (
-        <AuthShell title="Sesi Aktif" subtitle="Lihat dan cabut perangkat yang sedang terhubung.">
-            <div className="space-y-4">
-                {loading ? (
-                    <div className="text-center text-sm font-medium text-black/50 py-4">Memuat sesi...</div>
-                ) : sessions.length === 0 ? (
-                    <div className="rounded-xl bg-[#002447]/5 border border-[#002447]/10 px-4 py-4 text-sm text-black/60">
-                        Tidak ada sesi aktif.
+        <main className="min-h-screen bg-bidcream px-4 py-10 sm:px-6 lg:px-8">
+            <div className="mx-auto max-w-4xl">
+                <section className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+                    <div>
+                        <p className="text-xs font-bold uppercase tracking-[0.25em] text-bidnavy/60">Security</p>
+                        <h1 className="mt-2 text-3xl font-black tracking-tight text-bidnavy sm:text-4xl">
+                            Sesi Aktif
+                        </h1>
+                        <p className="mt-2 text-sm text-gray-500">Lihat dan cabut perangkat yang sedang terhubung.</p>
                     </div>
-                ) : (
-                    <div className="space-y-3">
-                        {sessions.map((session) => (
-                            <div
-                                key={session.id}
-                                className="rounded-xl bg-[#002447]/5 border border-[#002447]/10 px-4 py-4"
-                            >
-                                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                                    <div className="min-w-0">
-                                        <div className="flex items-center gap-2">
-                                            <p className="font-semibold text-[#002447] truncate">
-                                                {session.device || "Unknown device"}
-                                            </p>
-                                            {session.current && (
-                                                <span className="rounded-full bg-green-100 px-2 py-1 text-xs font-semibold text-green-700">
-                                                    Saat ini
-                                                </span>
-                                            )}
-                                        </div>
-                                        <p className="mt-1 text-xs text-black/50">
-                                            IP {session.ipAddress || "-"} · Terakhir aktif {formatDate(session.lastActive)}
-                                        </p>
-                                    </div>
-
-                                    <button
-                                        type="button"
-                                        disabled={session.current || actionId === session.id}
-                                        onClick={() => onRevoke(session.id)}
-                                        className="rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white disabled:bg-black/20 disabled:text-black/40"
-                                    >
-                                        {actionId === session.id ? "Mencabut..." : "Cabut"}
-                                    </button>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                )}
-
-                {msg && (
-                    <div
-                        className={`rounded-xl border px-4 py-3 text-sm ${
-                            isError ? "bg-red-50 border-red-100 text-red-600" : "bg-green-50 border-green-100 text-green-700"
-                        }`}
+                    <button
+                        type="button"
+                        onClick={() => router.push("/me")}
+                        className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-bold text-bidnavy shadow-sm hover:bg-bidcream"
                     >
-                        {msg}
-                    </div>
-                )}
+                        Kembali ke Profil
+                    </button>
+                </section>
 
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <section className="mt-8 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+                    {loading ? (
+                        <div className="py-8 text-center text-sm font-semibold text-gray-500">Memuat sesi...</div>
+                    ) : sessions.length === 0 ? (
+                        <div className="rounded-xl border border-gray-200 bg-bidcream px-4 py-4 text-sm text-gray-600">
+                            Tidak ada sesi aktif.
+                        </div>
+                    ) : (
+                        <div className="space-y-3">
+                            {sessions.map((session) => (
+                                <div
+                                    key={session.id}
+                                    className="rounded-xl border border-gray-200 bg-bidcream/60 px-4 py-4"
+                                >
+                                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                        <div className="min-w-0">
+                                            <div className="flex items-center gap-2">
+                                                <p className="truncate font-bold text-bidnavy">
+                                                    {session.device || "Unknown device"}
+                                                </p>
+                                                {session.current && (
+                                                    <span className="rounded-full bg-green-100 px-2 py-1 text-xs font-bold text-green-700">
+                                                        Saat ini
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <p className="mt-1 text-xs text-gray-500">
+                                                IP {session.ipAddress || "-"} · Terakhir aktif {formatDate(session.lastActive)}
+                                            </p>
+                                        </div>
+
+                                        <button
+                                            type="button"
+                                            disabled={session.current || actionId === session.id}
+                                            onClick={() => onRevoke(session.id)}
+                                            className="rounded-lg bg-red-600 px-4 py-2 text-sm font-bold text-white disabled:bg-gray-200 disabled:text-gray-400"
+                                        >
+                                            {actionId === session.id ? "Mencabut..." : "Cabut"}
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+
+                    {msg && (
+                        <div
+                            className={`mt-5 rounded-xl border px-4 py-3 text-sm font-semibold ${
+                                isError ? "border-red-100 bg-red-50 text-red-600" : "border-green-100 bg-green-50 text-green-700"
+                            }`}
+                        >
+                            {msg}
+                        </div>
+                    )}
+
                     <button
                         type="button"
                         disabled={loading}
                         onClick={loadSessions}
-                        className="w-full rounded-xl py-3 text-sm font-semibold text-[#002447] bg-[#002447]/10 hover:bg-[#002447]/20 disabled:opacity-60"
+                        className="mt-5 rounded-lg bg-bidnavy px-5 py-3 text-sm font-bold text-white hover:bg-bidnavy2 disabled:opacity-60"
                     >
                         Muat Ulang
                     </button>
-                    <button
-                        type="button"
-                        onClick={() => router.push("/me")}
-                        className="w-full rounded-xl py-3 text-sm font-semibold text-[#002447] bg-[#002447]/10 hover:bg-[#002447]/20"
-                    >
-                        Kembali ke Profil
-                    </button>
-                </div>
+                </section>
             </div>
-        </AuthShell>
+        </main>
     );
 }
 
