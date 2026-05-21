@@ -2,22 +2,21 @@
 
 import {useEffect, useState} from "react";
 import {useRouter} from "next/navigation";
-import AuthShell from "@/components/AuthShell";
+import {useAuth} from "@/context/AuthContext";
 import {buttonCls, inputCls} from "@/components/ui";
 import {me, updateProfile} from "@/lib/api";
 
 export default function EditProfilePage() {
     const router = useRouter();
+    const {checkSession, updateUser} = useAuth();
 
     const [displayName, setDisplayName] = useState("");
     const [avatarUrl, setAvatarUrl] = useState("");
-
     const [loading, setLoading] = useState(false);
     const [initLoading, setInitLoading] = useState(true);
     const [msg, setMsg] = useState<string | null>(null);
     const [isSuccess, setIsSuccess] = useState(false);
 
-    // Ambil data profile saat ini biar form-nya langsung keisi
     useEffect(() => {
         (async () => {
             try {
@@ -40,14 +39,14 @@ export default function EditProfilePage() {
         setLoading(true);
 
         try {
-            await updateProfile(displayName, avatarUrl);
+            const updated = await updateProfile(displayName, avatarUrl);
+            updateUser({
+                displayName: updated?.displayName ?? displayName,
+                avatarUrl: updated?.avatarUrl ?? avatarUrl,
+            });
+            await checkSession();
             setIsSuccess(true);
-            setMsg("Profil berhasil diperbarui! Mengalihkan...");
-
-            // Balik ke halaman /me setelah 2 detik
-            setTimeout(() => {
-                router.push("/me");
-            }, 2000);
+            setMsg("Profil berhasil diperbarui.");
         } catch (err: unknown) {
             const message =
                 err instanceof Error ? err.message : "Gagal memperbarui profil.";
@@ -57,77 +56,83 @@ export default function EditProfilePage() {
         }
     }
 
-    if (initLoading) {
-        return (
-            <AuthShell title="Edit Profil" subtitle="Memuat data Anda...">
-                <div className="text-center p-10 text-[#002447]">Memuat...</div>
-            </AuthShell>
-        );
-    }
-
     return (
-        <AuthShell title="Edit Profil" subtitle="Perbarui nama dan foto profil Anda.">
-            {!isSuccess ? (
-                <form onSubmit={onSubmit} className="space-y-6 animate-in fade-in duration-300">
-                    <div>
-                        <label className="block text-lg font-medium mb-2 text-[#002447]">Nama Tampilan</label>
-                        <input
-                            className={inputCls}
-                            type="text"
-                            placeholder="Contoh: John Doe"
-                            value={displayName}
-                            onChange={(e) => setDisplayName(e.target.value)}
-                            required
-                            maxLength={100}
-                            disabled={loading}
-                        />
-                    </div>
+        <main className="min-h-screen bg-bidcream px-4 py-10 sm:px-6 lg:px-8">
+            <div className="mx-auto max-w-3xl">
+                <section>
+                    <p className="text-xs font-bold uppercase tracking-[0.25em] text-bidnavy/60">Account</p>
+                    <h1 className="mt-2 text-3xl font-black tracking-tight text-bidnavy sm:text-4xl">
+                        Edit Profil
+                    </h1>
+                    <p className="mt-2 text-sm text-gray-500">Perbarui nama dan foto profil Anda.</p>
+                </section>
 
-                    <div>
-                        <label className="block text-lg font-medium mb-2 text-[#002447]">URL Foto Profil
-                            (Opsional)</label>
-                        <input
-                            className={inputCls}
-                            type="url"
-                            placeholder="https://contoh.com/foto.jpg"
-                            value={avatarUrl}
-                            onChange={(e) => setAvatarUrl(e.target.value)}
-                            disabled={loading}
-                        />
-                        <p className="mt-2 text-xs text-black/50">
-                            Masukkan link gambar (URL). Kosongkan jika tidak ingin menggunakan foto.
-                        </p>
-                    </div>
+                <section className="mt-8 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+                    {initLoading ? (
+                        <div className="py-8 text-center text-sm font-semibold text-gray-500">Memuat...</div>
+                    ) : (
+                        <form onSubmit={onSubmit} className="space-y-6">
+                            <div>
+                                <label className="mb-2 block text-sm font-bold text-bidnavy">Nama Tampilan</label>
+                                <input
+                                    className={inputCls}
+                                    type="text"
+                                    placeholder="Contoh: John Doe"
+                                    value={displayName}
+                                    onChange={(e) => setDisplayName(e.target.value)}
+                                    required
+                                    maxLength={100}
+                                    disabled={loading}
+                                />
+                            </div>
 
-                    <div className="flex flex-col space-y-3 pt-4">
-                        <button disabled={loading} className={buttonCls}>
-                            {loading ? "Menyimpan..." : "Simpan Perubahan"}
-                        </button>
+                            <div>
+                                <label className="mb-2 block text-sm font-bold text-bidnavy">
+                                    URL Foto Profil
+                                </label>
+                                <input
+                                    className={inputCls}
+                                    type="url"
+                                    placeholder="https://contoh.com/foto.jpg"
+                                    value={avatarUrl}
+                                    onChange={(e) => setAvatarUrl(e.target.value)}
+                                    disabled={loading}
+                                />
+                                <p className="mt-2 text-xs text-gray-500">
+                                    Kosongkan jika tidak ingin menggunakan foto profil.
+                                </p>
+                            </div>
 
-                        <button
-                            type="button"
-                            disabled={loading}
-                            onClick={() => router.push("/me")}
-                            className="text-center text-sm font-medium text-black/50 hover:text-[#002447] transition-colors"
-                        >
-                            Batal
-                        </button>
-                    </div>
+                            <div className="flex flex-col gap-3 pt-2 sm:flex-row">
+                                <button disabled={loading} className={buttonCls}>
+                                    {loading ? "Menyimpan..." : "Simpan Perubahan"}
+                                </button>
 
-                    {msg && (
-                        <div className="rounded-xl bg-red-50 text-red-600 border border-red-100 px-4 py-3 text-sm">
-                            {msg}
-                        </div>
+                                <button
+                                    type="button"
+                                    disabled={loading}
+                                    onClick={() => router.push("/me")}
+                                    className="rounded-xl border border-gray-200 px-5 py-3 text-sm font-bold text-bidnavy transition-colors hover:bg-bidcream disabled:opacity-60"
+                                >
+                                    Kembali ke Profil
+                                </button>
+                            </div>
+
+                            {msg && (
+                                <div
+                                    className={`rounded-xl border px-4 py-3 text-sm font-semibold ${
+                                        isSuccess
+                                            ? "border-green-100 bg-green-50 text-green-700"
+                                            : "border-red-100 bg-red-50 text-red-600"
+                                    }`}
+                                >
+                                    {msg}
+                                </div>
+                            )}
+                        </form>
                     )}
-                </form>
-            ) : (
-                <div className="space-y-6 animate-in fade-in zoom-in duration-300 text-center">
-                    <div
-                        className="rounded-xl bg-green-50 text-green-700 border border-green-100 px-4 py-4 text-sm font-medium leading-relaxed">
-                        {msg}
-                    </div>
-                </div>
-            )}
-        </AuthShell>
+                </section>
+            </div>
+        </main>
     );
 }
