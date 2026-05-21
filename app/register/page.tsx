@@ -3,6 +3,7 @@
 import React, {useState} from "react";
 import {useRouter} from "next/navigation";
 import Link from "next/link";
+import AuthShell from "@/components/AuthShell";
 import type {Role} from "@/types/auth";
 import {normalizeRole} from "@/lib/navigation";
 
@@ -70,135 +71,116 @@ export default function RegisterPage() {
     };
 
     return (
-        <div className="flex min-h-screen items-center justify-center bg-bidcream px-4 sm:px-6 lg:px-8">
-            <div className="w-full max-w-md space-y-8 rounded-2xl border border-gray-100 bg-white p-8 shadow-sm">
+        <AuthShell title="Daftar Akun" subtitle="Pilih peran dan buat akun BidMart baru.">
+            {error && (
+                <div className="mb-6 rounded-xl border border-red-100 bg-red-50 p-4 text-sm font-semibold text-red-600">
+                    {error}
+                </div>
+            )}
+
+            <form className="space-y-5" onSubmit={handleSubmit}>
                 <div>
-                    <h2 className="text-center text-3xl font-extrabold tracking-tight text-bidnavy">
-                        BidMart
-                    </h2>
-                    <p className="mt-2 text-center text-sm text-gray-600">
-                        Buat akun baru untuk mulai berpartisipasi dalam lelang
-                    </p>
+                    <label htmlFor="display-name" className="mb-2 block text-sm font-bold text-bidnavy">
+                        Nama Tampilan
+                    </label>
+                    <input
+                        id="display-name"
+                        type="text"
+                        required
+                        maxLength={100}
+                        disabled={isLoading}
+                        value={displayName}
+                        onChange={(e) => setDisplayName(e.target.value)}
+                        className="block w-full rounded-xl border border-gray-300 px-4 py-3 text-gray-900 placeholder-gray-400 focus:border-bidnavy focus:outline-none focus:ring-2 focus:ring-bidnavy/20"
+                        placeholder="Nama Lengkap / Nama Toko"
+                    />
                 </div>
 
-                {error && (
-                    <div className="rounded-lg border border-red-100 bg-red-50 p-4 text-sm font-semibold text-red-600">
-                        {error}
-                    </div>
-                )}
-
-                <form className="mt-8 space-y-4" onSubmit={handleSubmit}>
-                    <div className="space-y-4 rounded-md">
-                        <div>
-                            <label htmlFor="display-name" className="mb-1 block text-sm font-medium text-gray-700">
-                                Nama Tampilan (Display Name) <span className="text-red-500">*</span>
-                            </label>
-                            <input
-                                id="display-name"
-                                type="text"
-                                required
-                                maxLength={100}
+                <div>
+                    <span className="mb-2 block text-sm font-bold text-bidnavy">Daftar sebagai</span>
+                    <div className="grid grid-cols-2 gap-2 rounded-xl border border-gray-200 bg-gray-50 p-1">
+                        {(["BUYER", "SELLER"] as Role[]).map((option) => (
+                            <button
+                                key={option}
+                                type="button"
                                 disabled={isLoading}
-                                value={displayName}
-                                onChange={(e) => setDisplayName(e.target.value)}
-                                className="block w-full rounded-lg border border-gray-300 px-3 py-2.5 text-gray-900 placeholder-gray-400 transition-colors focus:border-bidnavy focus:outline-none focus:ring-2 focus:ring-bidnavy sm:text-sm"
-                                placeholder="Nama Lengkap / Nama Toko"
-                            />
-                        </div>
-
-                        <div>
-                            <span className="mb-2 block text-sm font-medium text-gray-700">
-                                Daftar sebagai <span className="text-red-500">*</span>
-                            </span>
-                            <div className="grid grid-cols-2 gap-2 rounded-xl border border-gray-200 bg-gray-50 p-1">
-                                {(["BUYER", "SELLER"] as Role[]).map((option) => (
-                                    <button
-                                        key={option}
-                                        type="button"
-                                        disabled={isLoading}
-                                        onClick={() => setRole(normalizeRole(option))}
-                                        className={`rounded-lg px-3 py-2 text-sm font-bold transition-colors ${
-                                            role === option
-                                                ? "bg-bidnavy text-white shadow-sm"
-                                                : "text-gray-600 hover:bg-white"
-                                        }`}
-                                    >
-                                        {option === "BUYER" ? "Buyer" : "Seller"}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-
-                        <div>
-                            <label htmlFor="email-address" className="mb-1 block text-sm font-medium text-gray-700">
-                                Alamat Email <span className="text-red-500">*</span>
-                            </label>
-                            <input
-                                id="email-address"
-                                type="email"
-                                required
-                                disabled={isLoading}
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                className="block w-full rounded-lg border border-gray-300 px-3 py-2.5 text-gray-900 placeholder-gray-400 transition-colors focus:border-bidnavy focus:outline-none focus:ring-2 focus:ring-bidnavy sm:text-sm"
-                                placeholder="nama@email.com"
-                            />
-                        </div>
-
-                        <div>
-                            <label htmlFor="password" className="mb-1 block text-sm font-medium text-gray-700">
-                                Kata Sandi <span className="text-red-500">*</span>
-                            </label>
-                            <input
-                                id="password"
-                                type="password"
-                                required
-                                minLength={8}
-                                disabled={isLoading}
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                className="block w-full rounded-lg border border-gray-300 px-3 py-2.5 text-gray-900 placeholder-gray-400 transition-colors focus:border-bidnavy focus:outline-none focus:ring-2 focus:ring-bidnavy sm:text-sm"
-                                placeholder="•••••••• (Min. 8 Karakter)"
-                            />
-                        </div>
-
-                        <div>
-                            <label htmlFor="confirm-password" className="mb-1 block text-sm font-medium text-gray-700">
-                                Konfirmasi Kata Sandi <span className="text-red-500">*</span>
-                            </label>
-                            <input
-                                id="confirm-password"
-                                type="password"
-                                required
-                                disabled={isLoading}
-                                value={confirmPassword}
-                                onChange={(e) => setConfirmPassword(e.target.value)}
-                                className="block w-full rounded-lg border border-gray-300 px-3 py-2.5 text-gray-900 placeholder-gray-400 transition-colors focus:border-bidnavy focus:outline-none focus:ring-2 focus:ring-bidnavy sm:text-sm"
-                                placeholder="••••••••"
-                            />
-                        </div>
+                                onClick={() => setRole(normalizeRole(option))}
+                                className={`rounded-lg px-3 py-2 text-sm font-bold transition-colors ${
+                                    role === option
+                                        ? "bg-bidnavy text-white shadow-sm"
+                                        : "text-gray-600 hover:bg-white"
+                                }`}
+                            >
+                                {option === "BUYER" ? "Buyer" : "Seller"}
+                            </button>
+                        ))}
                     </div>
+                </div>
 
-                    <div className="pt-2">
-                        <button
-                            type="submit"
-                            disabled={isLoading}
-                            className="flex w-full justify-center rounded-lg border border-transparent bg-bidnavy px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-bidnavy2 focus:outline-none focus:ring-2 focus:ring-bidnavy focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                        >
-                            {isLoading ? "Mendaftarkan Akun..." : "Daftar Sekarang"}
-                        </button>
-                    </div>
+                <div>
+                    <label htmlFor="email-address" className="mb-2 block text-sm font-bold text-bidnavy">
+                        Alamat Email
+                    </label>
+                    <input
+                        id="email-address"
+                        type="email"
+                        required
+                        disabled={isLoading}
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className="block w-full rounded-xl border border-gray-300 px-4 py-3 text-gray-900 placeholder-gray-400 focus:border-bidnavy focus:outline-none focus:ring-2 focus:ring-bidnavy/20"
+                        placeholder="nama@email.com"
+                    />
+                </div>
 
-                    <div className="mt-4 text-center">
-                        <p className="text-xs text-gray-600">
-                            Sudah memiliki akun?{" "}
-                            <Link href="/login" className="font-bold text-bidnavy transition-colors hover:text-bidnavy2">
-                                Masuk di sini
-                            </Link>
-                        </p>
-                    </div>
-                </form>
-            </div>
-        </div>
+                <div>
+                    <label htmlFor="password" className="mb-2 block text-sm font-bold text-bidnavy">
+                        Kata Sandi
+                    </label>
+                    <input
+                        id="password"
+                        type="password"
+                        required
+                        minLength={8}
+                        disabled={isLoading}
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className="block w-full rounded-xl border border-gray-300 px-4 py-3 text-gray-900 placeholder-gray-400 focus:border-bidnavy focus:outline-none focus:ring-2 focus:ring-bidnavy/20"
+                        placeholder="Minimal 8 karakter"
+                    />
+                </div>
+
+                <div>
+                    <label htmlFor="confirm-password" className="mb-2 block text-sm font-bold text-bidnavy">
+                        Konfirmasi Kata Sandi
+                    </label>
+                    <input
+                        id="confirm-password"
+                        type="password"
+                        required
+                        disabled={isLoading}
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        className="block w-full rounded-xl border border-gray-300 px-4 py-3 text-gray-900 placeholder-gray-400 focus:border-bidnavy focus:outline-none focus:ring-2 focus:ring-bidnavy/20"
+                        placeholder="Ulangi kata sandi"
+                    />
+                </div>
+
+                <button
+                    type="submit"
+                    disabled={isLoading}
+                    className="flex w-full justify-center rounded-xl bg-bidnavy px-4 py-3 text-sm font-bold text-white transition-colors hover:bg-bidnavy2 disabled:opacity-50"
+                >
+                    {isLoading ? "Mendaftarkan Akun..." : "Daftar Sekarang"}
+                </button>
+
+                <p className="text-center text-sm text-gray-600">
+                    Sudah memiliki akun?{" "}
+                    <Link href="/login" className="font-bold text-bidnavy hover:text-bidnavy2">
+                        Masuk di sini
+                    </Link>
+                </p>
+            </form>
+        </AuthShell>
     );
 }

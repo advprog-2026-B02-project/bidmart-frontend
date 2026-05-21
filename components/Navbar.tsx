@@ -15,6 +15,15 @@ export default function Navbar() {
     const { user, logout, isLoading } = useAuth();
     const router = useRouter();
     const pathname = usePathname();
+    const isAuthPage = pathname === "/login"
+        || pathname === "/register"
+        || pathname.startsWith("/login/")
+        || pathname.startsWith("/auth/")
+        || pathname.startsWith("/verify");
+
+    if (isAuthPage) {
+        return null;
+    }
 
     const roles = user?.roles ?? [];
     const navItems: NavItem[] = [
@@ -89,6 +98,7 @@ export default function Navbar() {
                                 {/* Avatar / Placeholder grafis */}
                                 <Link href="/me" className="h-9 w-9 overflow-hidden rounded-full border border-gray-200 bg-gray-100">
                                     {user.avatarUrl ? (
+                                        // eslint-disable-next-line @next/next/no-img-element
                                         <img src={user.avatarUrl} alt={user.displayName} className="h-full w-full object-cover" />
                                     ) : (
                                         <div className="flex h-full w-full items-center justify-center font-bold text-gray-400 text-sm">

@@ -3,6 +3,7 @@
 import React, {useState} from "react";
 import {useRouter} from "next/navigation";
 import Link from "next/link";
+import AuthShell from "@/components/AuthShell";
 import {useAuth} from "@/context/AuthContext";
 import {getDefaultRoute, getSafeNextPath} from "@/lib/navigation";
 
@@ -58,82 +59,67 @@ export default function LoginPage() {
     };
 
     return (
-        <div className="flex min-h-screen items-center justify-center bg-bidcream px-4 sm:px-6 lg:px-8">
-            <div className="w-full max-w-md space-y-8 rounded-2xl border border-gray-100 bg-white p-8 shadow-sm">
+        <AuthShell title="Masuk" subtitle="Masuk untuk mulai mengajukan penawaran lelang.">
+            {error && (
+                <div className="mb-6 rounded-xl border border-red-100 bg-red-50 p-4 text-sm font-semibold text-red-600">
+                    {error}
+                </div>
+            )}
+
+            <form className="space-y-5" onSubmit={handleSubmit}>
                 <div>
-                    <h2 className="text-center text-3xl font-black tracking-tight text-bidnavy">
-                        BidMart
-                    </h2>
-                    <p className="mt-2 text-center text-sm text-gray-500">
-                        Masuk untuk mulai mengajukan penawaran lelang
-                    </p>
+                    <label htmlFor="email-address" className="mb-2 block text-sm font-bold text-bidnavy">
+                        Alamat Email
+                    </label>
+                    <input
+                        id="email-address"
+                        type="email"
+                        required
+                        disabled={isLoading}
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className="block w-full rounded-xl border border-gray-300 px-4 py-3 text-gray-900 placeholder-gray-400 focus:border-bidnavy focus:outline-none focus:ring-2 focus:ring-bidnavy/20"
+                        placeholder="nama@email.com"
+                    />
                 </div>
 
-                {error && (
-                    <div className="rounded-xl border border-red-100 bg-red-50 p-4 text-sm font-semibold text-red-600">
-                        {error}
-                    </div>
-                )}
-
-                <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-                    <div className="space-y-4 rounded-md shadow-sm">
-                        <div>
-                            <label htmlFor="email-address" className="mb-1 block text-sm font-medium text-gray-700">
-                                Alamat Email
-                            </label>
-                            <input
-                                id="email-address"
-                                type="email"
-                                required
-                                disabled={isLoading}
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                className="block w-full rounded-lg border border-gray-300 px-3 py-2.5 text-gray-900 placeholder-gray-400 focus:border-bidnavy focus:outline-none focus:ring-2 focus:ring-bidnavy sm:text-sm"
-                                placeholder="nama@email.com"
-                            />
-                        </div>
-
-                        <div>
-                            <label htmlFor="password" className="mb-1 block text-sm font-medium text-gray-700">
-                                Kata Sandi
-                            </label>
-                            <input
-                                id="password"
-                                type="password"
-                                required
-                                disabled={isLoading}
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                className="block w-full rounded-lg border border-gray-300 px-3 py-2.5 text-gray-900 placeholder-gray-400 focus:border-bidnavy focus:outline-none focus:ring-2 focus:ring-bidnavy sm:text-sm"
-                                placeholder="••••••••"
-                            />
-                        </div>
-                    </div>
-
-                    <div className="flex justify-end">
-                        <Link href="/auth/forgot" className="text-sm font-medium text-bidnavy hover:text-bidnavy2 hover:underline">
-                            Lupa kata sandi?
-                        </Link>
-                    </div>
-
-                    <button
-                        type="submit"
+                <div>
+                    <label htmlFor="password" className="mb-2 block text-sm font-bold text-bidnavy">
+                        Kata Sandi
+                    </label>
+                    <input
+                        id="password"
+                        type="password"
+                        required
                         disabled={isLoading}
-                        className="flex w-full justify-center rounded-lg border border-transparent bg-bidnavy px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-bidnavy2 focus:outline-none focus:ring-2 focus:ring-bidnavy focus:ring-offset-2 disabled:opacity-50"
-                    >
-                        {isLoading ? "Membuka Sesi..." : "Masuk ke Akun"}
-                    </button>
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className="block w-full rounded-xl border border-gray-300 px-4 py-3 text-gray-900 placeholder-gray-400 focus:border-bidnavy focus:outline-none focus:ring-2 focus:ring-bidnavy/20"
+                        placeholder="Masukkan kata sandi"
+                    />
+                </div>
 
-                    <div className="text-center">
-                        <p className="text-xs text-gray-600">
-                            Belum punya akun?{" "}
-                            <Link href="/register" className="font-bold text-bidnavy transition-colors hover:text-bidnavy2">
-                                Daftar baru di sini
-                            </Link>
-                        </p>
-                    </div>
-                </form>
-            </div>
-        </div>
+                <div className="flex justify-end">
+                    <Link href="/auth/forgot" className="text-sm font-semibold text-bidnavy hover:text-bidnavy2 hover:underline">
+                        Lupa kata sandi?
+                    </Link>
+                </div>
+
+                <button
+                    type="submit"
+                    disabled={isLoading}
+                    className="flex w-full justify-center rounded-xl bg-bidnavy px-4 py-3 text-sm font-bold text-white transition-colors hover:bg-bidnavy2 disabled:opacity-50"
+                >
+                    {isLoading ? "Membuka Sesi..." : "Masuk ke Akun"}
+                </button>
+
+                <p className="text-center text-sm text-gray-600">
+                    Belum punya akun?{" "}
+                    <Link href="/register" className="font-bold text-bidnavy hover:text-bidnavy2">
+                        Daftar baru di sini
+                    </Link>
+                </p>
+            </form>
+        </AuthShell>
     );
 }

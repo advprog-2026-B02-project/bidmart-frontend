@@ -6,7 +6,7 @@ import { useAuth } from "@/context/AuthContext";
 import {getDefaultRoute, getSafeNextPath} from "@/lib/navigation";
 
 function TwoFactorAuthContent() {
-    const { login } = useAuth();
+    const { login, checkSession } = useAuth();
     const router = useRouter();
     const searchParams = useSearchParams();
 
@@ -51,11 +51,13 @@ function TwoFactorAuthContent() {
                 throw new Error(data.error || "Kode verifikasi yang Anda masukkan salah.");
             }
 
-            const loggedInUser = data.user || data;
-            login(loggedInUser);
+            if (!data.user) {
+                throw new Error("Verifikasi berhasil, tapi data user tidak ditemukan.");
+            }
 
-            router.replace(nextPath ?? getDefaultRoute(loggedInUser?.roles ?? []));
-            router.refresh();
+            login(data);
+            await checkSession();
+            router.replace(nextPath ?? getDefaultRoute(data.user?.roles ?? []));
         } catch (err: unknown) {
             const error = err as Error;
             setError(error.message || "Terjadi kesalahan sistem. Coba lagi.");
