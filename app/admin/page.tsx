@@ -3,15 +3,29 @@
 import {useEffect, useMemo, useState} from "react";
 import {useRouter} from "next/navigation";
 import {
+    AdminModerationAction,
+    AdminModerationListing,
+    listAdminModerationListings,
+    moderateAdminListing,
+    resolveAdminDispute,
+} from "@/lib/admin-operations.api";
+import {
+    AdminActivitySummary,
+    AdminDashboardSummary,
     AdminRole,
     AdminUser,
+    AdminUserSession,
     adminAssignPermission,
     adminAssignRole,
+    adminActivitySummary,
     adminCreateRole,
+    adminDashboardSummary,
+    adminListUserSessions,
     adminListRoles,
     adminListUsers,
     adminRevokePermission,
     adminRevokeRole,
+    adminRevokeUserSession,
     adminSuspendUser,
     adminUnsuspendUser,
     adminUpdateRole,
@@ -31,6 +45,10 @@ export default function AdminDashboardPage() {
     const router = useRouter();
     const [users, setUsers] = useState<AdminUser[]>([]);
     const [roles, setRoles] = useState<AdminRole[]>([]);
+    const [summary, setSummary] = useState<AdminDashboardSummary | null>(null);
+    const [activitySummary, setActivitySummary] = useState<AdminActivitySummary | null>(null);
+    const [userSessions, setUserSessions] = useState<AdminUserSession[]>([]);
+    const [moderationListings, setModerationListings] = useState<AdminModerationListing[]>([]);
     const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
     const [selectedRoleId, setSelectedRoleId] = useState<string | null>(null);
     const [search, setSearch] = useState("");
@@ -42,9 +60,15 @@ export default function AdminDashboardPage() {
     const [replacePermissions, setReplacePermissions] = useState("");
     const [statusValue, setStatusValue] = useState("ACTIVE");
     const [suspendReason, setSuspendReason] = useState("");
+    const [moderationReason, setModerationReason] = useState("");
+    const [disputeOrderId, setDisputeOrderId] = useState("");
+    const [disputeResolution, setDisputeResolution] = useState("REFUND_BUYER");
+    const [disputeNote, setDisputeNote] = useState("");
     const [roleName, setRoleName] = useState("");
     const [rolePermissions, setRolePermissions] = useState("");
     const [loading, setLoading] = useState(true);
+    const [sessionsLoading, setSessionsLoading] = useState(false);
+    const [moderationLoading, setModerationLoading] = useState(false);
     const [action, setAction] = useState<string | null>(null);
     const [message, setMessage] = useState<Message | null>(null);
 
@@ -57,8 +81,20 @@ export default function AdminDashboardPage() {
         const active = users.filter((user) => user.status === "ACTIVE").length;
         const suspended = users.filter((user) => user.suspended || user.status === "SUSPENDED").length;
         const admins = users.filter((user) => user.roles?.includes("ADMIN")).length;
-        return {active, suspended, admins, total: users.length};
-    }, [users]);
+        const verified = users.filter((user) => user.emailVerified).length;
+        const summaryRoles = summary?.usersByRole || {};
+
+        return {
+            active: summary?.activeUsers ?? active,
+            admins: getRoleCount(summaryRoles, "ADMIN") ?? admins,
+            buyers: getRoleCount(summaryRoles, "BUYER") ?? users.filter((user) => user.roles?.includes("BUYER")).length,
+            sellers: getRoleCount(summaryRoles, "SELLER") ?? users.filter((user) => user.roles?.includes("SELLER")).length,
+            suspended: summary?.suspendedUsers ?? suspended,
+            total: summary?.totalUsers ?? users.length,
+            unverified: summary ? Math.max(summary.totalUsers - summary.verifiedUsers, 0) : users.length - verified,
+            verified: summary?.verifiedUsers ?? verified,
+        };
+    }, [summary, users]);
 
     function selectUser(user: AdminUser | null) {
         setSelectedUserId(user?.id || null);
@@ -87,10 +123,17 @@ export default function AdminDashboardPage() {
                 }),
                 adminListRoles(),
             ]);
+            const [summaryData, activityData] = await Promise.all([
+                adminDashboardSummary(),
+                adminActivitySummary(),
+            ]);
             setUsers(userData);
             setRoles(roleData);
+            setSummary(summaryData);
+            setActivitySummary(activityData);
             selectUser((selectedUserId && userData.find((user) => user.id === selectedUserId)) || userData[0] || null);
             selectRole((selectedRoleId && roleData.find((role) => role.id === selectedRoleId)) || null);
+            void Promise.resolve().then(loadModerationListings);
         } catch (err: unknown) {
             setMessage({
                 type: "error",
@@ -98,6 +141,37 @@ export default function AdminDashboardPage() {
             });
         } finally {
             setLoading(false);
+        }
+    }
+
+    async function loadModerationListings() {
+        setModerationLoading(true);
+
+        try {
+            setModerationListings(await listAdminModerationListings());
+        } catch (err: unknown) {
+            setMessage({
+                type: "error",
+                text: err instanceof Error ? err.message : "Gagal memuat listing moderation.",
+            });
+        } finally {
+            setModerationLoading(false);
+        }
+    }
+
+    async function loadUserSessions(userId: string) {
+        setSessionsLoading(true);
+
+        try {
+            setUserSessions(await adminListUserSessions(userId));
+        } catch (err: unknown) {
+            setUserSessions([]);
+            setMessage({
+                type: "error",
+                text: err instanceof Error ? err.message : "Gagal memuat sesi user.",
+            });
+        } finally {
+            setSessionsLoading(false);
         }
     }
 
@@ -148,10 +222,88 @@ export default function AdminDashboardPage() {
         }
     }
 
+    async function runModerationAction(listingId: string, moderationAction: AdminModerationAction) {
+        setAction(`moderate-${moderationAction}-${listingId}`);
+        setMessage(null);
+
+        try {
+            await moderateAdminListing(listingId, moderationAction, moderationReason);
+            setModerationListings((current) => current.filter((listing) => listing.id !== listingId));
+            setMessage({
+                type: "success",
+                text: moderationAction === "APPROVE"
+                    ? "Listing berhasil di-approve dan keluar dari queue moderation."
+                    : "Listing berhasil dihapus dari katalog.",
+            });
+        } catch (err: unknown) {
+            setMessage({
+                type: "error",
+                text: err instanceof Error ? err.message : "Aksi moderation listing gagal.",
+            });
+        } finally {
+            setAction(null);
+        }
+    }
+
+    async function runResolveDispute() {
+        if (!disputeOrderId.trim()) {
+            setMessage({type: "error", text: "Masukkan ID order yang sedang dispute."});
+            return;
+        }
+
+        setAction("resolve-dispute");
+        setMessage(null);
+
+        try {
+            await resolveAdminDispute(disputeOrderId.trim(), {
+                resolution: disputeResolution,
+                note: disputeNote,
+            });
+            setDisputeOrderId("");
+            setDisputeNote("");
+            setMessage({type: "success", text: "Dispute order berhasil diselesaikan."});
+        } catch (err: unknown) {
+            setMessage({
+                type: "error",
+                text: err instanceof Error ? err.message : "Gagal menyelesaikan dispute order.",
+            });
+        } finally {
+            setAction(null);
+        }
+    }
+
+    async function revokeSelectedSession(sessionId: string) {
+        if (!selectedUserId) return;
+        setAction(`revoke-session-${sessionId}`);
+        setMessage(null);
+
+        try {
+            await adminRevokeUserSession(selectedUserId, sessionId);
+            await loadUserSessions(selectedUserId);
+            setMessage({type: "success", text: "Sesi user berhasil dicabut."});
+        } catch (err: unknown) {
+            setMessage({
+                type: "error",
+                text: err instanceof Error ? err.message : "Gagal mencabut sesi user.",
+            });
+        } finally {
+            setAction(null);
+        }
+    }
+
     useEffect(() => {
         void Promise.resolve().then(loadData);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
+
+    useEffect(() => {
+        if (!selectedUserId) {
+            void Promise.resolve().then(() => setUserSessions([]));
+            return;
+        }
+
+        void Promise.resolve().then(() => loadUserSessions(selectedUserId));
+    }, [selectedUserId]);
 
     return (
         <main className="min-h-screen bg-[#f6f4ef] text-[#102033]">
@@ -198,7 +350,137 @@ export default function AdminDashboardPage() {
                     <Stat label="Total user" value={stats.total}/>
                     <Stat label="Aktif" value={stats.active}/>
                     <Stat label="Suspended" value={stats.suspended}/>
+                    <Stat label="Verified" value={stats.verified}/>
+                    <Stat label="Unverified" value={stats.unverified}/>
                     <Stat label="Admin" value={stats.admins}/>
+                    <Stat label="Seller" value={stats.sellers}/>
+                    <Stat label="Buyer" value={stats.buyers}/>
+                </section>
+
+                <section className="grid gap-4 lg:grid-cols-[1fr_1.4fr]">
+                    <div className="rounded-md border border-black/10 bg-white p-4">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-black/40">Security summary</p>
+                        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                            <MiniStat label="Active sessions" value={activitySummary?.activeSessions ?? summary?.activeSessions ?? 0}/>
+                            <MiniStat label="Revoked sessions" value={activitySummary?.revokedSessions ?? 0}/>
+                            <MiniStat label="Expired sessions" value={activitySummary?.expiredSessions ?? 0}/>
+                            <MiniStat label="Pending 2FA" value={activitySummary?.pendingTwoFactorSessions ?? 0}/>
+                        </div>
+                    </div>
+
+                    <div className="rounded-md border border-black/10 bg-white p-4">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-black/40">Admin activity scope</p>
+                        <div className="mt-3 grid gap-3 xl:grid-cols-[0.55fr_1.4fr_1fr]">
+                            <MiniStat label="Total sesi terlacak" value={activitySummary?.totalSessions ?? "-"}/>
+
+                            <div className="rounded-md border border-[#002447]/10 bg-[#f6f4ef] p-3">
+                                <div className="flex items-center justify-between gap-3">
+                                    <div>
+                                        <p className="text-sm font-semibold text-[#002447]">Listing moderation</p>
+                                        <p className="mt-1 text-xs text-black/55">
+                                            {activitySummary?.moderationScope || "Catalog service owns listing moderation execution."}
+                                        </p>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={loadModerationListings}
+                                        disabled={moderationLoading}
+                                        className="rounded-md border border-[#002447]/20 px-3 py-2 text-xs font-semibold text-[#002447] disabled:opacity-60"
+                                    >
+                                        {moderationLoading ? "Memuat..." : "Refresh"}
+                                    </button>
+                                </div>
+
+                                <input
+                                    value={moderationReason}
+                                    onChange={(event) => setModerationReason(event.target.value)}
+                                    className="mt-3 w-full rounded-md border border-black/10 bg-white px-3 py-2 text-xs outline-none focus:border-[#006c67]"
+                                    placeholder="Catatan moderation untuk approve/reject/delete"
+                                />
+
+                                <div className="mt-3 space-y-2">
+                                    {moderationListings.length === 0 ? (
+                                        <p className="rounded-md bg-white px-3 py-3 text-xs text-black/45">
+                                            Tidak ada listing yang perlu ditampilkan.
+                                        </p>
+                                    ) : (
+                                        moderationListings.map((listing) => (
+                                            <div key={listing.id} className="rounded-md bg-white p-3">
+                                                <div className="flex items-start justify-between gap-3">
+                                                    <div className="min-w-0">
+                                                        <p className="truncate text-sm font-semibold text-[#002447]">{listing.title}</p>
+                                                        <p className="mt-1 text-xs text-black/45">
+                                                            {listing.status} · {listing.categoryName || "Tanpa kategori"}
+                                                        </p>
+                                                    </div>
+                                                    <span className="text-xs font-semibold text-black/45">
+                                                        {formatRupiah(listing.currentPrice)}
+                                                    </span>
+                                                </div>
+                                                <div className="mt-3 grid gap-2 sm:grid-cols-3">
+                                                    {getListingActions(listing, activitySummary).map((item) => (
+                                                        <button
+                                                            key={item}
+                                                            type="button"
+                                                            disabled={action !== null}
+                                                            onClick={() => runModerationAction(listing.id, item)}
+                                                            className={`rounded-md px-3 py-2 text-xs font-semibold disabled:opacity-50 ${
+                                                                item === "DELETE"
+                                                                    ? "border border-red-200 text-red-700 hover:bg-red-50"
+                                                                    : "bg-[#002447] text-white hover:bg-[#003b70]"
+                                                            }`}
+                                                        >
+                                                            {action === `moderate-${item}-${listing.id}`
+                                                                ? "Memproses..."
+                                                                : item === "DELETE" ? "Delete dari katalog" : "Approve"}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
+                            </div>
+
+                            <div className="rounded-md border border-[#002447]/10 bg-[#f6f4ef] p-3">
+                                <p className="text-sm font-semibold text-[#002447]">Dispute support</p>
+                                <p className="mt-1 text-xs text-black/55">
+                                    {activitySummary?.disputeScope || "Order service owns dispute execution."}
+                                </p>
+                                <div className="mt-3 space-y-2">
+                                    <input
+                                        value={disputeOrderId}
+                                        onChange={(event) => setDisputeOrderId(event.target.value)}
+                                        className="w-full rounded-md border border-black/10 bg-white px-3 py-2 text-xs outline-none focus:border-[#006c67]"
+                                        placeholder="Order ID yang statusnya DISPUTED"
+                                    />
+                                    <select
+                                        value={disputeResolution}
+                                        onChange={(event) => setDisputeResolution(event.target.value)}
+                                        className="w-full rounded-md border border-black/10 bg-white px-3 py-2 text-xs outline-none focus:border-[#006c67]"
+                                    >
+                                        {getDisputeActions(activitySummary).map((item) => (
+                                            <option key={item} value={item}>{item}</option>
+                                        ))}
+                                    </select>
+                                    <textarea
+                                        value={disputeNote}
+                                        onChange={(event) => setDisputeNote(event.target.value)}
+                                        className="min-h-20 w-full rounded-md border border-black/10 bg-white px-3 py-2 text-xs outline-none focus:border-[#006c67]"
+                                        placeholder="Catatan keputusan admin"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={runResolveDispute}
+                                        disabled={action !== null}
+                                        className="w-full rounded-md bg-[#002447] px-3 py-2 text-xs font-semibold text-white hover:bg-[#003b70] disabled:opacity-60"
+                                    >
+                                        {action === "resolve-dispute" ? "Menyelesaikan..." : "Resolve Dispute"}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </section>
 
                 <section className="grid gap-6 xl:grid-cols-[minmax(0,1.4fr)_minmax(360px,0.8fr)]">
@@ -432,6 +714,64 @@ export default function AdminDashboardPage() {
 
                         <section className="rounded-md border border-black/10 bg-white p-4">
                             <div className="flex items-center justify-between gap-3">
+                                <h2 className="text-lg font-semibold text-[#002447]">User Sessions</h2>
+                                <button
+                                    type="button"
+                                    onClick={() => selectedUserId && loadUserSessions(selectedUserId)}
+                                    disabled={!selectedUserId || sessionsLoading}
+                                    className="rounded-md border border-[#002447]/20 px-3 py-2 text-xs font-semibold text-[#002447] disabled:opacity-60"
+                                >
+                                    {sessionsLoading ? "Memuat..." : "Refresh"}
+                                </button>
+                            </div>
+
+                            {!selectedUser ? (
+                                <p className="mt-4 text-sm text-black/50">Pilih user untuk melihat sesi.</p>
+                            ) : sessionsLoading ? (
+                                <p className="mt-4 text-sm text-black/50">Memuat sesi user...</p>
+                            ) : userSessions.length === 0 ? (
+                                <p className="mt-4 rounded-md bg-[#002447]/5 px-3 py-3 text-sm text-black/50">
+                                    Tidak ada sesi untuk user ini.
+                                </p>
+                            ) : (
+                                <div className="mt-4 space-y-3">
+                                    {userSessions.map((session) => (
+                                        <div key={session.id} className="rounded-md border border-black/10 p-3">
+                                            <div className="flex items-start justify-between gap-3">
+                                                <div className="min-w-0">
+                                                    <p className="truncate text-sm font-semibold text-[#002447]">
+                                                        {session.device || session.userAgent || "Unknown device"}
+                                                    </p>
+                                                    <p className="mt-1 text-xs text-black/50">
+                                                        IP {session.ipAddress || "-"}
+                                                    </p>
+                                                </div>
+                                                <StatusBadge status={session.revoked ? "SUSPENDED" : session.current ? "ACTIVE" : "ACTIVE"}/>
+                                            </div>
+
+                                            <dl className="mt-3 grid gap-2 text-xs text-black/55 sm:grid-cols-2">
+                                                <SessionMeta label="Created" value={formatDate(session.createdAt)}/>
+                                                <SessionMeta label="Last active" value={formatDate(session.lastActive)}/>
+                                                <SessionMeta label="Expires" value={formatDate(session.expiresAt)}/>
+                                                <SessionMeta label="Revoked" value={session.revoked ? "Yes" : "No"}/>
+                                            </dl>
+
+                                            <button
+                                                type="button"
+                                                disabled={action !== null || session.revoked}
+                                                onClick={() => revokeSelectedSession(session.id)}
+                                                className="mt-3 w-full rounded-md border border-red-200 px-3 py-2 text-sm font-semibold text-red-700 disabled:bg-black/5 disabled:text-black/30"
+                                            >
+                                                {action === `revoke-session-${session.id}` ? "Mencabut..." : "Revoke Session"}
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </section>
+
+                        <section className="rounded-md border border-black/10 bg-white p-4">
+                            <div className="flex items-center justify-between gap-3">
                                 <h2 className="text-lg font-semibold text-[#002447]">Roles</h2>
                                 <select
                                     value={selectedRoleId || ""}
@@ -494,6 +834,15 @@ function Stat({label, value}: { label: string; value: number }) {
     );
 }
 
+function MiniStat({label, value}: { label: string; value: number | string }) {
+    return (
+        <div className="rounded-md bg-[#002447]/5 px-3 py-3">
+            <p className="text-xs font-semibold uppercase tracking-wide text-black/40">{label}</p>
+            <p className="mt-1 text-lg font-semibold text-[#002447]">{value}</p>
+        </div>
+    );
+}
+
 function StatusBadge({status}: { status: string }) {
     const suspended = status === "SUSPENDED";
     return (
@@ -504,6 +853,15 @@ function StatusBadge({status}: { status: string }) {
         >
             {status || "ACTIVE"}
         </span>
+    );
+}
+
+function SessionMeta({label, value}: { label: string; value: string }) {
+    return (
+        <div>
+            <dt className="font-semibold uppercase tracking-wide text-black/35">{label}</dt>
+            <dd className="mt-0.5 text-black/65">{value}</dd>
+        </div>
     );
 }
 
@@ -552,4 +910,54 @@ function splitList(value: string) {
         .split(/[,\n]/)
         .map((item) => item.trim())
         .filter(Boolean);
+}
+
+function getRoleCount(values: Record<string, number>, role: string) {
+    const normalizedRole = role.toUpperCase().replace(/^ROLE_/, "");
+    const match = Object.entries(values).find(([key]) => (
+        key.toUpperCase().replace(/^ROLE_/, "") === normalizedRole
+    ));
+
+    return match?.[1];
+}
+
+function getListingActions(
+    listing: AdminModerationListing,
+    summary: AdminActivitySummary | null
+): AdminModerationAction[] {
+    const values = summary?.moderationActions?.filter((item): item is AdminModerationAction => (
+        item === "APPROVE" || item === "DELETE"
+    ));
+    const actions = (values && values.length > 0
+        ? values
+        : ["APPROVE", "DELETE"]) as AdminModerationAction[];
+
+    return actions.filter((item) => item === "DELETE" || listing.status === "DRAFT");
+}
+
+function getDisputeActions(summary: AdminActivitySummary | null) {
+    const values = summary?.disputeResolutionActions?.filter(Boolean);
+    return values && values.length > 0 ? values : ["REFUND_BUYER", "RELEASE_TO_SELLER"];
+}
+
+function formatDate(value?: string | null) {
+    if (!value) return "-";
+
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return value;
+
+    return date.toLocaleString("id-ID", {
+        dateStyle: "medium",
+        timeStyle: "short",
+    });
+}
+
+function formatRupiah(value?: number | null) {
+    if (value == null) return "-";
+
+    return new Intl.NumberFormat("id-ID", {
+        style: "currency",
+        currency: "IDR",
+        maximumFractionDigits: 0,
+    }).format(value);
 }

@@ -42,6 +42,42 @@ export type AdminRole = {
     permissions: string[];
 };
 
+export type AdminDashboardSummary = {
+    totalUsers: number;
+    activeUsers: number;
+    suspendedUsers: number;
+    verifiedUsers: number;
+    activeSessions: number;
+    usersByRole?: Record<string, number>;
+};
+
+export type AdminActivitySummary = {
+    totalSessions?: number;
+    activeSessions?: number;
+    revokedSessions?: number;
+    expiredSessions?: number;
+    pendingTwoFactorSessions?: number;
+    moderationScope?: string;
+    disputeScope?: string;
+    moderationActions?: string[];
+    disputeResolutionActions?: string[];
+    moderationEndpoint?: string;
+    disputeResolutionEndpoint?: string;
+    [key: string]: unknown;
+};
+
+export type AdminUserSession = {
+    id: string;
+    device?: string | null;
+    userAgent?: string | null;
+    ipAddress?: string | null;
+    lastActive?: string | null;
+    createdAt?: string | null;
+    expiresAt?: string | null;
+    revoked?: boolean;
+    current?: boolean;
+};
+
 function isPartialLoginResponse(data: unknown): data is PartialLoginResponse {
     if (!data || typeof data !== "object") return false;
     const response = data as Partial<Record<keyof PartialLoginResponse, unknown>>;
@@ -521,6 +557,30 @@ export async function adminListUsers(filters: {
 
     return adminRequest<AdminUser[]>(`/admin/users?${params.toString()}`, {
         method: "GET",
+    });
+}
+
+export async function adminDashboardSummary(): Promise<AdminDashboardSummary> {
+    return adminRequest<AdminDashboardSummary>("/admin/users/summary", {
+        method: "GET",
+    });
+}
+
+export async function adminActivitySummary(): Promise<AdminActivitySummary> {
+    return adminRequest<AdminActivitySummary>("/admin/users/activity", {
+        method: "GET",
+    });
+}
+
+export async function adminListUserSessions(userId: string): Promise<AdminUserSession[]> {
+    return adminRequest<AdminUserSession[]>(`/admin/users/${userId}/sessions`, {
+        method: "GET",
+    });
+}
+
+export async function adminRevokeUserSession(userId: string, sessionId: string): Promise<void> {
+    return adminRequest<void>(`/admin/users/${userId}/sessions/${sessionId}`, {
+        method: "DELETE",
     });
 }
 
