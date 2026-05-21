@@ -17,7 +17,7 @@ export function useAuctionWebSocket({ auctionId, onBidPlaced }: WebSocketArgs) {
         if (!auctionId) return;
 
         const client = new Client({
-            webSocketFactory: () => new SockJS("/api/bidding/ws-auction"),
+            webSocketFactory: () => new SockJS("/ws-bidding"),
             debug: () => { },
             reconnectDelay: 5000,
         });
