@@ -1,24 +1,41 @@
 import { NextRequest, NextResponse } from "next/server";
 import { fetchInternal } from "@/lib/fetcher";
- 
-const ORDER_SERVICE_URL = process.env.ORDER_SERVICE_URL ?? "http://localhost:8086";
- 
+
+const ORDER_SERVICE_URL =
+  process.env.ORDER_SERVICE_URL ?? "http://localhost:8086";
+
 export async function GET(
-  _req: NextRequest,
+  _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
-) {
+): Promise<NextResponse> {
+  const { id } = await params;
+
   try {
-    const { id } = await params;
     const backendRes = await fetchInternal(`/api/v1/orders/${id}`, {
       serviceUrl: ORDER_SERVICE_URL,
+      method: "GET",
     });
- 
-    const data = await backendRes.json();
+
+    if (backendRes.status === 404) {
+      return NextResponse.json(
+        { message: "Pesanan tidak ditemukan." },
+        { status: 404 }
+      );
+    }
+
+    if (backendRes.status === 403) {
+      return NextResponse.json(
+        { message: "Kamu tidak punya akses ke pesanan ini." },
+        { status: 403 }
+      );
+    }
+
+    const data: unknown = await backendRes.json();
     return NextResponse.json(data, { status: backendRes.status });
-  } catch (err) {
-    console.error("[BFF /api/orders/:id GET]", err);
+  } catch (error) {
+    console.error(`[BFF GET /api/orders/${id}] Error:`, error);
     return NextResponse.json(
-      { message: "Gagal mengambil detail pesanan." },
+      { message: "Terjadi kesalahan saat memuat detail pesanan." },
       { status: 500 }
     );
   }

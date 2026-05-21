@@ -1,3 +1,8 @@
+export interface UserBasicDTO {
+  id: string;
+  displayName: string;
+}
+
 export type OrderStatus =
   | "CREATED"
   | "PACKAGED"
@@ -5,55 +10,18 @@ export type OrderStatus =
   | "COMPLETED"
   | "DISPUTED"
   | "RESOLVED";
- 
-export type OrderRole = "BUYER" | "SELLER";
-
-export interface OrderParticipant {
-  id: string;
-  displayName: string;
-}
- 
-export interface ShippingAddress {
-  street: string;
-  city: string;
-  province: string;
-  postalCode: string;
-}
- 
-export interface BuyerDetail extends OrderParticipant {
-  shippingAddress: ShippingAddress | null;
-}
- 
-export interface ListingSnapshot {
-  id: string;
-  title: string;
-  images: string[];
-}
- 
-
-export interface ShippingInfo {
-  courier: string;
-  trackingNumber: string;
-  shippedAt: string | null;
-}
- 
-export interface TimelineEvent {
-  status: OrderStatus;
-  occurredAt: string;
-  note: string | null;
-}
 
 export interface OrderSummary {
   id: string;
   auctionId: string;
   listingTitle: string;
   amount: number;
-  buyer: OrderParticipant;
-  seller: OrderParticipant;
+  buyer: UserBasicDTO;
+  seller: UserBasicDTO;
   status: OrderStatus;
   createdAt: string;
 }
- 
+
 export interface OrderListResponse {
   content: OrderSummary[];
   page: number;
@@ -62,35 +30,71 @@ export interface OrderListResponse {
   totalPages: number;
 }
 
+export type OrderRole = "BUYER" | "SELLER";
+
+export interface OrderListParams {
+  role: OrderRole;
+  status?: OrderStatus;
+  page?: number;
+  size?: number;
+}
+
+export interface ShippingAddress {
+  street: string | null;
+  city: string | null;
+  province: string | null;
+  postalCode: string | null;
+}
+
+export interface BuyerDTO {
+  id: string;
+  displayName: string;
+  shippingAddress: ShippingAddress;
+}
+
+export interface SellerDTO {
+  id: string;
+  displayName: string;
+}
+
+export interface ListingDTO {
+  id: string;
+  title: string;
+  images: string[]; // array URL string, bisa empty
+}
+
+export interface ShippingDTO {
+  courier: string | null;
+  trackingNumber: string | null;
+  shippedAt: string | null;
+}
+
+export interface TimelineDTO {
+  status: string;
+  timestamp: string;
+}
+
 export interface OrderDetail {
   id: string;
   auctionId: string;
-  listing: ListingSnapshot;
+  listing: ListingDTO;
   amount: number;
-  buyer: BuyerDetail;
-  seller: OrderParticipant;
+  buyer: BuyerDTO;
+  seller: SellerDTO;
   status: OrderStatus;
-  shipping: ShippingInfo | null;
-  timeline: TimelineEvent[] | null;
+  shipping: ShippingDTO | null;
+  timeline: TimelineDTO[] | null;
   createdAt: string;
 }
- 
-export interface ShipOrderRequest {
+
+export interface ShipOrderPayload {
+  status: "SHIPPED";
   courier: string;
   trackingNumber: string;
-  status?: string;
 }
- 
-export interface DisputeOrderRequest {
+
+export interface DisputePayload {
   reason: string;
   description: string;
   evidenceImages: string[];
-}
- 
-
-export interface OrderErrorResponse {
-  status: number;
-  error: string;
-  message: string;
-  timestamp: string;
 }
