@@ -1,5 +1,4 @@
 "use client";
-
 import { useState, useEffect, useCallback } from "react";
 import { fetchOrders } from "@/lib/order.api";
 import type { OrderSummary, OrderRole, OrderStatus } from "@/types/order";
@@ -14,7 +13,6 @@ interface Props {
 const STATUS_OPTIONS: { value: OrderStatus | ""; label: string }[] = [
   { value: "",          label: "Semua Status" },
   { value: "CREATED",   label: "📋 Dibuat" },
-  { value: "PACKAGED",  label: "📦 Dikemas" },
   { value: "SHIPPED",   label: "🚚 Dikirim" },
   { value: "COMPLETED", label: "✅ Selesai" },
   { value: "DISPUTED",  label: "⚠️ Sengketa" },
@@ -191,7 +189,6 @@ export default function OrderListPage({
   const handleStatusChange = useCallback(
     (status: OrderStatus | "") => {
       setStatusFilter(status);
-      // loadOrders akan dipanggil ulang via useEffect dep statusFilter
     },
     []
   );

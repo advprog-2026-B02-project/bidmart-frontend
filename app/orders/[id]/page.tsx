@@ -36,7 +36,6 @@ const STATUS_CONFIG: Record<
   { label: string; className: string; icon: string }
 > = {
   CREATED:   { label: "Dibuat",        className: "bg-blue-100 text-blue-700 border-blue-200",      icon: "📋" },
-  PACKAGED:  { label: "Dikemas",       className: "bg-yellow-100 text-yellow-700 border-yellow-200", icon: "📦" },
   SHIPPED:   { label: "Dikirim",       className: "bg-indigo-100 text-indigo-700 border-indigo-200", icon: "🚚" },
   COMPLETED: { label: "Selesai",       className: "bg-green-100 text-green-700 border-green-200",    icon: "✅" },
   DISPUTED:  { label: "Sengketa",      className: "bg-red-100 text-red-700 border-red-200",          icon: "⚠️" },
@@ -81,7 +80,6 @@ export default function OrderDetailPage({ params }: PageProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Aksi state
   const [receiveLoading, setReceiveLoading] = useState(false);
   const [receiveError, setReceiveError] = useState<string | null>(null);
   const [showShipModal, setShowShipModal] = useState(false);
@@ -135,7 +133,6 @@ export default function OrderDetailPage({ params }: PageProps) {
         setReceiveLoading(false);
         setReceiveError(null);
         setActionSuccess("Pesanan berhasil dikonfirmasi sebagai diterima.");
-        // Re-fetch agar status ter-update
         loadOrder();
       }
     }
@@ -228,7 +225,6 @@ export default function OrderDetailPage({ params }: PageProps) {
     );
   }
 
-  
   const listingImage = order.listing.images[0] ?? null;
 
   const addr = order.buyer.shippingAddress;
@@ -408,8 +404,8 @@ export default function OrderDetailPage({ params }: PageProps) {
                   </div>
                 )}
 
-                {/* ── Aksi Seller: status PACKAGED ── */}
-                {isSeller && order.status === "PACKAGED" && (
+                {/* ── Aksi Seller: status CREATED (siap kirim) ── */}
+                {isSeller && order.status === "CREATED" && (
                   <button
                     onClick={() => setShowShipModal(true)}
                     className="w-full rounded-xl bg-[#002447] py-3 text-sm font-semibold text-white transition-colors hover:bg-[#003b70]"
@@ -427,7 +423,7 @@ export default function OrderDetailPage({ params }: PageProps) {
 
                 {(isBuyer || isSeller) &&
                   order.status !== "SHIPPED" &&
-                  order.status !== "PACKAGED" && (
+                  order.status !== "CREATED" && (
                     <div className="rounded-xl bg-[#f6f4ef] px-4 py-3 text-center">
                       <p className="text-sm text-gray-500">
                         {order.status === "COMPLETED"
