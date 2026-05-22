@@ -53,7 +53,7 @@ export async function shipOrder(
   });
 
   if (res.status === 400) {
-    throw new Error("Pesanan belum berstatus PACKAGED atau data tidak valid.");
+    throw new Error("Status pesanan belum sesuai atau data pengiriman tidak valid.");
   }
   if (res.status === 403) {
     throw new Error("Kamu bukan penjual pesanan ini.");
@@ -65,6 +65,10 @@ export async function shipOrder(
         `Gagal mengupdate pengiriman (HTTP ${res.status})`
     );
   }
+}
+
+export async function packageOrder(id: string): Promise<void> {
+  await shipOrder(id, { status: "PACKAGED" });
 }
 
 export async function receiveOrder(id: string): Promise<void> {

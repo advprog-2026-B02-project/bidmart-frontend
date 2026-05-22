@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import type { OrderSummary, OrderRole, OrderStatus } from "@/types/order";
+import { toDate } from "@/lib/utils/dateTime";
 
 interface Props {
   order: OrderSummary;
@@ -17,13 +18,16 @@ function formatRupiah(amount: number): string {
 }
 
 function formatDate(iso: string): string {
+  const date = toDate(iso);
+  if (!date) return "-";
+
   return new Intl.DateTimeFormat("id-ID", {
     day: "numeric",
     month: "short",
     year: "numeric",
     hour: "2-digit",
     minute: "2-digit",
-  }).format(new Date(iso));
+  }).format(date);
 }
 
 const STATUS_CONFIG: Record<

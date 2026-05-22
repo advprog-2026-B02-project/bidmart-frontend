@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
+import { toEpochMillis } from "@/lib/utils/dateTime";
 
 interface Props {
   auctionEndTime: string;
@@ -15,7 +16,8 @@ interface TimeLeft {
 }
 
 function calculate(endTime: string): TimeLeft {
-  const diff = new Date(endTime).getTime() - Date.now();
+  const endMillis = toEpochMillis(endTime);
+  const diff = endMillis === null ? 0 : endMillis - Date.now();
 
   if (diff <= 0) {
     return { days: 0, hours: 0, minutes: 0, seconds: 0, expired: true };

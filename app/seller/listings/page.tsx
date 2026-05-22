@@ -9,6 +9,7 @@ import {
 } from "@/lib/seller.api";
 import type { ListingDetail } from "@/types/catalog";
 import ListingFormModal from "@/components/seller/ListingFormModal";
+import { toDate, toEpochMillis } from "@/lib/utils/dateTime";
 
 function formatRupiah(amount: number): string {
   return new Intl.NumberFormat("id-ID", {
@@ -19,23 +20,26 @@ function formatRupiah(amount: number): string {
 }
 
 function formatDate(iso: string | null): string {
-  if (!iso) return "—";
+  const date = toDate(iso);
+  if (!date) return "—";
+
   return new Intl.DateTimeFormat("id-ID", {
     day: "numeric",
     month: "short",
     year: "numeric",
-  }).format(new Date(iso));
+  }).format(date);
 }
 
 function getDisplayStatus(
   listing: ListingDetail,
   now: number
 ): ListingDetail["status"] {
+  const auctionEndTime = toEpochMillis(listing.auctionEndTime);
+
   if (
     listing.status === "ACTIVE" &&
     (listing.auctionOngoing === false ||
-      (listing.auctionEndTime &&
-        new Date(listing.auctionEndTime).getTime() <= now))
+      (auctionEndTime !== null && auctionEndTime <= now))
   ) {
     return "CLOSED";
   }

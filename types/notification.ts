@@ -6,6 +6,7 @@ export type NotificationType =
     | "AUCTION_EXTENDED"
     | "AUCTION_ENDED"
     | "ORDER_CREATED"
+    | "ORDER_PACKAGED"
     | "ORDER_SHIPPED"
     | "ORDER_COMPLETED"
     | "DISPUTE_CREATED"

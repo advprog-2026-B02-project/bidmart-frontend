@@ -2,11 +2,12 @@
 import { use, useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { fetchOrderDetail, receiveOrder } from "@/lib/order.api";
+import { fetchOrderDetail, packageOrder, receiveOrder } from "@/lib/order.api";
 import { useAuth } from "@/context/AuthContext";
 import type { OrderDetail, OrderStatus } from "@/types/order";
 import ShipOrderModal from "@/components/order/ShipOrderModal";
 import DisputeOrderModal from "@/components/order/DisputeOrderModal";
+import { toDate } from "@/lib/utils/dateTime";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -22,13 +23,16 @@ function formatRupiah(amount: number): string {
 
 function formatDate(iso: string | null): string {
   if (!iso) return "—";
+  const date = toDate(iso);
+  if (!date) return "—";
+
   return new Intl.DateTimeFormat("id-ID", {
     day: "numeric",
     month: "long",
     year: "numeric",
     hour: "2-digit",
     minute: "2-digit",
-  }).format(new Date(iso));
+  }).format(date);
 }
 
 const STATUS_CONFIG: Record<
@@ -82,6 +86,8 @@ export default function OrderDetailPage({ params }: PageProps) {
   const [error, setError] = useState<string | null>(null);
 
   // Aksi state
+  const [packageLoading, setPackageLoading] = useState(false);
+  const [packageError, setPackageError] = useState<string | null>(null);
   const [receiveLoading, setReceiveLoading] = useState(false);
   const [receiveError, setReceiveError] = useState<string | null>(null);
   const [showShipModal, setShowShipModal] = useState(false);
@@ -162,6 +168,23 @@ export default function OrderDetailPage({ params }: PageProps) {
     }
 
     return () => { cancelled = true; };
+  }, [id, loadOrder]);
+
+  const handlePackage = useCallback(async () => {
+    setPackageLoading(true);
+    setPackageError(null);
+
+    try {
+      await packageOrder(id);
+      setActionSuccess("Pesanan berhasil ditandai sedang dikemas.");
+      loadOrder();
+    } catch (err) {
+      setPackageError(
+        err instanceof Error ? err.message : "Gagal menandai pesanan dikemas."
+      );
+    } finally {
+      setPackageLoading(false);
+    }
   }, [id, loadOrder]);
 
   const handleShipSuccess = useCallback(() => {
@@ -409,6 +432,23 @@ export default function OrderDetailPage({ params }: PageProps) {
                 )}
 
                 {/* ── Aksi Seller: status PACKAGED ── */}
+                {isSeller && order.status === "CREATED" && (
+                  <div className="space-y-2">
+                    <button
+                      onClick={handlePackage}
+                      disabled={packageLoading}
+                      className="w-full rounded-xl bg-[#002447] py-3 text-sm font-semibold text-white transition-colors hover:bg-[#003b70] disabled:opacity-60"
+                    >
+                      {packageLoading ? "Memproses..." : "📦 Tandai Dikemas"}
+                    </button>
+                    {packageError && (
+                      <p className="mt-1 rounded-xl bg-red-50 px-3 py-2 text-xs text-red-600">
+                        {packageError}
+                      </p>
+                    )}
+                  </div>
+                )}
+
                 {isSeller && order.status === "PACKAGED" && (
                   <button
                     onClick={() => setShowShipModal(true)}
@@ -427,6 +467,7 @@ export default function OrderDetailPage({ params }: PageProps) {
 
                 {(isBuyer || isSeller) &&
                   order.status !== "SHIPPED" &&
+                  order.status !== "CREATED" &&
                   order.status !== "PACKAGED" && (
                     <div className="rounded-xl bg-[#f6f4ef] px-4 py-3 text-center">
                       <p className="text-sm text-gray-500">

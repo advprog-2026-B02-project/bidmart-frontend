@@ -188,6 +188,22 @@ export default function OrderListPage({
     return cleanup;
   }, [loadOrders, statusFilter]);
 
+  useEffect(() => {
+    const refreshOnFocus = () => {
+      if (document.visibilityState === "visible") {
+        loadOrders(currentPage, statusFilter);
+      }
+    };
+
+    document.addEventListener("visibilitychange", refreshOnFocus);
+    window.addEventListener("focus", refreshOnFocus);
+
+    return () => {
+      document.removeEventListener("visibilitychange", refreshOnFocus);
+      window.removeEventListener("focus", refreshOnFocus);
+    };
+  }, [currentPage, loadOrders, statusFilter]);
+
   const handleStatusChange = useCallback(
     (status: OrderStatus | "") => {
       setStatusFilter(status);

@@ -4,12 +4,24 @@ import React from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { CatalogItem } from "@/types/catalog";
+import { toEpochMillis } from "@/lib/utils/dateTime";
 
 interface AuctionCardProps {
     listing: CatalogItem;
 }
 
 export default function AuctionCard({ listing }: AuctionCardProps) {
+    const [now, setNow] = React.useState<number | null>(null);
+
+    React.useEffect(() => {
+        const updateNow = () => setNow(Date.now());
+
+        updateNow();
+        const intervalId = window.setInterval(updateNow, 60000);
+
+        return () => window.clearInterval(intervalId);
+    }, []);
+
     const formatPrice = (price: number) => {
         return new Intl.NumberFormat("id-ID", {
             style: "currency",
@@ -20,10 +32,12 @@ export default function AuctionCard({ listing }: AuctionCardProps) {
 
     const formatRemainingTime = (endTimeString: string | null) => {
         if (!endTimeString) return "Waktu tidak ditentukan";
+        if (now === null) return "Menghitung...";
 
-        const now = new Date();
-        const end = new Date(endTimeString);
-        const diffMs = end.getTime() - now.getTime();
+        const endTime = toEpochMillis(endTimeString);
+        if (endTime === null) return "Waktu tidak ditentukan";
+
+        const diffMs = endTime - now;
 
         if (diffMs <= 0) return "Lelang Selesai";
 

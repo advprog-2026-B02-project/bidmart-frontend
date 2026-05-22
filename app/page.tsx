@@ -6,10 +6,12 @@ import { CatalogItem } from "@/types/catalog";
 import AuctionCard from "@/components/AuctionCard";
 import {useAuth} from "@/context/AuthContext";
 import {canAccessSellerArea} from "@/lib/navigation";
+import { toEpochMillis } from "@/lib/utils/dateTime";
 
 function isAuctionOngoing(listing: CatalogItem): boolean {
   if (listing.status !== "ACTIVE" || !listing.auctionEndTime) return false;
-  return new Date(listing.auctionEndTime).getTime() > Date.now();
+  const endTime = toEpochMillis(listing.auctionEndTime);
+  return endTime !== null && endTime > Date.now();
 }
 
 export default function HomePage() {

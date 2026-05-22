@@ -8,10 +8,12 @@ import {canAccessAdminArea} from "@/lib/navigation";
 import type { CatalogItem, Category, CatalogQueryParams } from "@/types/catalog";
 import CatalogCard from "@/components/catalog/CatalogCard";
 import CatalogCardSkeleton from "@/components/catalog/CatalogCardSkeleton";
+import { toEpochMillis } from "@/lib/utils/dateTime";
 
 function isAuctionOngoing(item: CatalogItem): boolean {
   if (item.status !== "ACTIVE" || !item.auctionEndTime) return false;
-  return new Date(item.auctionEndTime).getTime() > Date.now();
+  const endTime = toEpochMillis(item.auctionEndTime);
+  return endTime !== null && endTime > Date.now();
 }
 
 function FilterBar({

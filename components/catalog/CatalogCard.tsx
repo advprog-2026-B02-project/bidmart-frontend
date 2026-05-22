@@ -3,6 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import type { CatalogItem } from "@/types/catalog";
+import { toEpochMillis } from "@/lib/utils/dateTime";
  
 interface Props {
   item: CatalogItem;
@@ -29,7 +30,10 @@ function useCountdown(auctionEndTime: string | null): string | null {
     let cancelled = false;
 
     function calculate(): string {
-      const diff = new Date(auctionEndTime!).getTime() - Date.now();
+      const endTime = toEpochMillis(auctionEndTime);
+      if (endTime === null) return "Lelang berakhir";
+
+      const diff = endTime - Date.now();
       if (diff <= 0) return "Lelang berakhir";
 
       const totalSec = Math.floor(diff / 1000);

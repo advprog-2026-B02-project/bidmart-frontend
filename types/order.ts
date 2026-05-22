@@ -88,9 +88,9 @@ export interface OrderDetail {
 }
 
 export interface ShipOrderPayload {
-  status: "SHIPPED";
-  courier: string;
-  trackingNumber: string;
+  status: "PACKAGED" | "SHIPPED";
+  courier?: string;
+  trackingNumber?: string;
 }
 
 export interface DisputePayload {

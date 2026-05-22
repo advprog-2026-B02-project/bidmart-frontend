@@ -6,6 +6,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useAuctionWebSocket } from "@/hooks/useAuctionWebSocket";
 import { fetchListingDetail } from "@/lib/catalog.api";
 import { maskBidderDisplay } from "@/lib/utils/mask";
+import { normalizeDateTime, toDate, toEpochMillis } from "@/lib/utils/dateTime";
 import type { ListingDetail } from "@/types/catalog";
 import type { AuctionResponse, BidResponse } from "@/types/bidding";
 import ListingGallery from "@/components/catalog/ListingGallery";
@@ -27,23 +28,28 @@ function formatRupiah(amount: number): string {
 }
 
 function formatDate(iso: string | null): string {
-  if (!iso) return "—";
+  const date = toDate(iso);
+  if (!date) return "—";
+
   return new Intl.DateTimeFormat("id-ID", {
     day: "numeric",
     month: "long",
     year: "numeric",
     hour: "2-digit",
     minute: "2-digit",
-  }).format(new Date(iso));
+  }).format(date);
 }
 
 function normalizeBidPage(data: unknown): { bids: Partial<BidResponse>[]; total: number } {
   if (Array.isArray(data)) {
-    return { bids: data as Partial<BidResponse>[], total: data.length };
+    const bids = (data as Partial<BidResponse>[]).map(normalizeBidTimestamps);
+    return { bids, total: bids.length };
   }
 
   const page = data as BidPagePayload;
-  const bids = Array.isArray(page?.content) ? page.content : [];
+  const bids = Array.isArray(page?.content)
+    ? page.content.map(normalizeBidTimestamps)
+    : [];
   return {
     bids,
     total: typeof page?.totalElements === "number" ? page.totalElements : bids.length,
@@ -65,6 +71,29 @@ function toListingStatus(
   if (isClosedAuctionStatus(auctionStatus)) return "CLOSED";
   if (isOpenAuctionStatus(auctionStatus)) return "ACTIVE";
   return fallback;
+}
+
+function normalizeAuctionTimestamps(auction: AuctionResponse): AuctionResponse {
+  return {
+    ...auction,
+    startTime: normalizeDateTime(auction.startTime) ?? auction.startTime,
+    endTime: normalizeDateTime(auction.endTime) ?? auction.endTime,
+    originalEndTime: normalizeDateTime(auction.originalEndTime) ?? auction.originalEndTime,
+  };
+}
+
+function normalizeBidTimestamps<T extends Partial<BidResponse>>(bid: T): T {
+  if (!bid.auctionEndTime) return bid;
+
+  return {
+    ...bid,
+    auctionEndTime: normalizeDateTime(bid.auctionEndTime) ?? bid.auctionEndTime,
+  };
+}
+
+function hasEndedByTime(endTime: string | null | undefined, now: number): boolean {
+  const endMillis = toEpochMillis(endTime);
+  return endMillis !== null && endMillis <= now;
 }
 
 function StatusBadge({ status }: { status: ListingDetail["status"] }) {
@@ -145,9 +174,7 @@ function BidCard({
   const minBid = auction?.minimumNextBid ?? currentPrice + listing.minimumIncrement;
   const auctionStatus = auction?.status ?? listing.status;
   const auctionEndTime = auction?.endTime ?? listing.auctionEndTime;
-  const auctionEndedByTime = auctionEndTime
-    ? new Date(auctionEndTime).getTime() <= now
-    : false;
+  const auctionEndedByTime = hasEndedByTime(auctionEndTime, now);
   const auctionOpen = isOpenAuctionStatus(auctionStatus) && !auctionEndedByTime;
   const auctionClosed = isClosedAuctionStatus(auctionStatus) || Boolean(auction?.id && auctionEndedByTime);
   const canBid =
@@ -328,7 +355,7 @@ export default function ListingDetailPage({ params }: PageProps) {
       return;
     }
 
-    const auctionData = (await auctionRes.json()) as AuctionResponse;
+    const auctionData = normalizeAuctionTimestamps((await auctionRes.json()) as AuctionResponse);
     setAuction(auctionData);
     setBidAmount(auctionData.minimumNextBid);
     setListing((prev) =>
@@ -400,7 +427,7 @@ export default function ListingDetailPage({ params }: PageProps) {
         let resolvedAuctionId: string | null = null;
 
         if (auctionRes.ok) {
-          const auctionData = (await auctionRes.json()) as AuctionResponse;
+          const auctionData = normalizeAuctionTimestamps((await auctionRes.json()) as AuctionResponse);
           if (isMounted) {
             setAuction(auctionData);
             setBidAmount(auctionData.minimumNextBid);
@@ -477,6 +504,8 @@ export default function ListingDetailPage({ params }: PageProps) {
     onBidPlaced: (eventData) => {
       const incrementValue = listing?.minimumIncrement ?? 10000;
       const nextMinimumBid = eventData.minimumNextBid ?? eventData.amount + incrementValue;
+      const bidEvent = normalizeBidTimestamps(eventData);
+      const auctionEndTime = bidEvent.auctionEndTime ?? eventData.auctionEndTime;
 
       setAuction((prev) =>
         prev
@@ -485,7 +514,7 @@ export default function ListingDetailPage({ params }: PageProps) {
               currentPrice: eventData.amount,
               minimumNextBid: nextMinimumBid,
               highestBidderId: eventData.bidderId,
-              endTime: eventData.auctionEndTime ?? prev.endTime,
+              endTime: auctionEndTime ?? prev.endTime,
             }
           : prev
       );
@@ -496,7 +525,7 @@ export default function ListingDetailPage({ params }: PageProps) {
               ...prev,
               currentPrice: eventData.amount,
               bidCount: eventData.bidCount ?? prev.bidCount + 1,
-              auctionEndTime: eventData.auctionEndTime ?? prev.auctionEndTime,
+              auctionEndTime: auctionEndTime ?? prev.auctionEndTime,
               auctionOngoing: true,
             }
           : prev
@@ -505,20 +534,20 @@ export default function ListingDetailPage({ params }: PageProps) {
       setBidTotal((prev) => eventData.bidCount ?? (prev === null ? 1 : prev + 1));
       setBidAmount(nextMinimumBid);
       setBidHistory((prev) => {
-        if (eventData.id && prev.some((bid) => bid.id === eventData.id)) {
+        if (bidEvent.id && prev.some((bid) => bid.id === bidEvent.id)) {
           return prev;
         }
 
         const latest = prev[0];
         if (
-          !eventData.id &&
-          latest?.amount === eventData.amount &&
-          latest?.bidderId === eventData.bidderId
+          !bidEvent.id &&
+          latest?.amount === bidEvent.amount &&
+          latest?.bidderId === bidEvent.bidderId
         ) {
           return prev;
         }
 
-        return [eventData, ...prev];
+        return [bidEvent, ...prev];
       });
     },
     onAuctionEnded: () => {
@@ -584,7 +613,7 @@ export default function ListingDetailPage({ params }: PageProps) {
           );
         }
 
-        const placedBid = data as Partial<BidResponse>;
+        const placedBid = normalizeBidTimestamps(data as Partial<BidResponse>);
         if (placedBid.amount !== undefined) {
           const nextBid = placedBid.amount + listing.minimumIncrement;
           setAuction((prev) =>
@@ -694,9 +723,7 @@ export default function ListingDetailPage({ params }: PageProps) {
   }
 
   const auctionEndTime = auction?.endTime ?? listing.auctionEndTime;
-  const auctionEndedByTime = auctionEndTime
-    ? new Date(auctionEndTime).getTime() <= now
-    : false;
+  const auctionEndedByTime = hasEndedByTime(auctionEndTime, now);
   const displayStatus: ListingDetail["status"] = auction
     ? isClosedAuctionStatus(auction.status) || auctionEndedByTime
       ? "CLOSED"

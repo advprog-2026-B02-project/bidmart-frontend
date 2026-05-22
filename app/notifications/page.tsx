@@ -7,6 +7,7 @@ import {
     markAllAsRead,
     markAsRead,
 } from "@/lib/notification.api";
+import { toDate } from "@/lib/utils/dateTime";
 import type { NotificationItem, NotificationListResponse } from "@/types/notification";
 
 // ─── Notification type metadata 
@@ -18,6 +19,7 @@ const TYPE_META: Record<string, { icon: string; accent: string }> = {
     AUCTION_EXTENDED: { icon: "⏳", accent: "bg-violet-50 border-violet-200" },
     AUCTION_ENDED:    { icon: "🔔", accent: "bg-slate-50 border-slate-200" },
     ORDER_CREATED:    { icon: "📦", accent: "bg-sky-50 border-sky-200" },
+    ORDER_PACKAGED:   { icon: "📦", accent: "bg-amber-50 border-amber-200" },
     ORDER_SHIPPED:    { icon: "🚚", accent: "bg-sky-50 border-sky-200" },
     ORDER_COMPLETED:  { icon: "✅", accent: "bg-emerald-50 border-emerald-200" },
     DISPUTE_CREATED:  { icon: "⚠️", accent: "bg-rose-50 border-rose-200" },
@@ -30,7 +32,10 @@ function getTypeMeta(type: string) {
 }
 
 function formatRelativeTime(iso: string): string {
-    const diff = Date.now() - new Date(iso).getTime();
+    const date = toDate(iso);
+    if (!date) return "-";
+
+    const diff = Date.now() - date.getTime();
     const mins = Math.floor(diff / 60_000);
     if (mins < 1) return "Baru saja";
     if (mins < 60) return `${mins} menit lalu`;
@@ -38,7 +43,7 @@ function formatRelativeTime(iso: string): string {
     if (hours < 24) return `${hours} jam lalu`;
     const days = Math.floor(hours / 24);
     if (days < 7) return `${days} hari lalu`;
-    return new Date(iso).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" });
+    return date.toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" });
 }
 
 // ─── Skeleton loader 

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { fetchInternal } from "@/lib/fetcher";
 
 const ORDER_SERVICE_URL =
-  process.env.ORDER_SERVICE_URL ?? "http://localhost:8086";
+  process.env.ORDER_SERVICE_URL ?? "http://localhost:8085";
 
 export async function GET(
   _request: NextRequest,
