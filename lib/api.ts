@@ -516,14 +516,23 @@ export async function disableTwoFactor(password: string) {
     }
 }
 
-export async function updateProfile(displayName: string, avatarUrl: string) {
+export type UpdateProfilePayload = {
+    displayName: string;
+    avatarUrl: string;
+    shippingStreet?: string;
+    shippingCity?: string;
+    shippingProvince?: string;
+    shippingPostalCode?: string;
+};
+
+export async function updateProfile(profile: UpdateProfilePayload) {
     try {
         const res = await fetch("/api/auth/me", {
             method: "PUT",
             headers: {
                 "Content-Type": "application/json",
             },
-            body: JSON.stringify({displayName, avatarUrl}),
+            body: JSON.stringify(profile),
         });
 
         if (!res.ok) {

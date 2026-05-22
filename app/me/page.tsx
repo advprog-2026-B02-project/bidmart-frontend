@@ -8,6 +8,10 @@ interface UserProfile {
     email: string;
     displayName: string;
     avatarUrl?: string | null;
+    shippingStreet?: string;
+    shippingCity?: string;
+    shippingProvince?: string;
+    shippingPostalCode?: string;
     roles?: string[];
     permissions?: string[];
     emailVerified?: boolean;
@@ -27,6 +31,10 @@ export default function MePage() {
                     email: data?.email || data?.principal || "Email tidak ditemukan",
                     displayName: data?.displayName || data?.username || "Pengguna Tanpa Nama",
                     avatarUrl: data?.avatarUrl || null,
+                    shippingStreet: data?.shippingStreet || "",
+                    shippingCity: data?.shippingCity || "",
+                    shippingProvince: data?.shippingProvince || "",
+                    shippingPostalCode: data?.shippingPostalCode || "",
                     roles: data?.roles || [],
                     permissions: data?.permissions || [],
                     emailVerified: data?.emailVerified,
@@ -58,6 +66,12 @@ export default function MePage() {
             : "BUYER";
     const canOpenAdmin = user?.roles?.includes("ADMIN");
     const canOpenSeller = user?.roles?.includes("SELLER");
+    const shippingAddress = [
+        user?.shippingStreet,
+        user?.shippingCity,
+        user?.shippingProvince,
+        user?.shippingPostalCode,
+    ].filter(Boolean).join(", ");
 
     return (
         <main className="min-h-screen bg-bidcream px-4 py-10 sm:px-6 lg:px-8">
@@ -136,6 +150,26 @@ export default function MePage() {
                             <ProfileStatCard label="Held Balance" value="-" description="Saldo tertahan untuk bid/order" />
                             <ProfileStatCard label="Katalog Aktif" value="-" description="Listing yang sedang tampil" />
                             <ProfileStatCard label="Order Saya" value="0" description="Sebagai buyer" />
+                        </section>
+
+                        <section className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+                            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                                <div>
+                                    <p className="text-xs font-black uppercase tracking-[0.25em] text-bidnavy/70">
+                                        Shipping Address
+                                    </p>
+                                    <h2 className="mt-2 text-2xl font-black text-bidnavy">Alamat pengiriman</h2>
+                                    <p className="mt-2 max-w-3xl text-sm font-medium text-gray-500">
+                                        {shippingAddress || "Belum ada alamat pengiriman. Tambahkan alamat agar proses order lebih siap."}
+                                    </p>
+                                </div>
+                                <button
+                                    onClick={() => router.push("/me/edit")}
+                                    className="rounded-lg border border-gray-200 px-5 py-3 text-sm font-bold text-bidnavy transition-colors hover:bg-bidcream"
+                                >
+                                    Ubah Alamat
+                                </button>
+                            </div>
                         </section>
 
                         {canOpenSeller && (
