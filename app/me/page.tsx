@@ -146,8 +146,8 @@ export default function MePage() {
                         </section>
 
                         <section className="grid gap-4 md:grid-cols-4">
-                            <ProfileStatCard label="Available Balance" value="-" description="Saldo siap dipakai" />
-                            <ProfileStatCard label="Held Balance" value="-" description="Saldo tertahan untuk bid/order" />
+                            <ProfileStatCard label="Saldo Tersedia" value="-" description="Saldo siap dipakai" />
+                            <ProfileStatCard label="Saldo Tertahan" value="-" description="Saldo tertahan untuk bid/order" />
                             <ProfileStatCard label="Katalog Aktif" value="-" description="Listing yang sedang tampil" />
                             <ProfileStatCard label="Order Saya" value="0" description="Sebagai buyer" />
                         </section>
