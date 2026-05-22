@@ -5,6 +5,7 @@ export interface BidResponse {
     id: string;
     auctionId: string;
     bidderId: string;
+    bidderDisplay?: string; // censored email or display name
     amount: number;
     status: BidStatus;
     holdId: string | null;
@@ -21,6 +22,7 @@ export interface AuctionResponse {
     currentPrice: number;
     minimumNextBid: number;
     highestBidderId: string | null;
+    highestBidderMaxAmount?: number;
     startTime: string;
     endTime: string;
     originalEndTime: string;

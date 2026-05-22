@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { useAuctionWebSocket } from "@/hooks/useAuctionWebSocket";
 import { fetchListingDetail } from "@/lib/catalog.api";
+import { maskBidderDisplay } from "@/lib/utils/mask";
 import type { ListingDetail } from "@/types/catalog";
 import type { AuctionResponse, BidResponse } from "@/types/bidding";
 import ListingGallery from "@/components/catalog/ListingGallery";
@@ -126,6 +127,7 @@ function BidCard({
   onBidAmountChange,
   onSubmit,
   onCountdownExpire,
+  user,
 }: {
   listing: ListingDetail;
   auction: AuctionResponse | null;
@@ -137,6 +139,7 @@ function BidCard({
   onBidAmountChange: (amount: number) => void;
   onSubmit: (event: React.FormEvent<HTMLFormElement>) => void;
   onCountdownExpire: () => void;
+  user?: { id: string } | null;
 }) {
   const currentPrice = auction?.currentPrice ?? listing.currentPrice;
   const minBid = auction?.minimumNextBid ?? currentPrice + listing.minimumIncrement;
@@ -228,8 +231,13 @@ function BidCard({
 
       <form onSubmit={onSubmit} className="space-y-2">
         <label className="block text-sm font-medium text-gray-700">
-          Batas Maksimum Penawaran (Rp)
+          Masukkan Penawaran Maksimal Anda (MAX BID, Rp)
         </label>
+        {auction && auction.highestBidderId === user?.id && auction.highestBidderMaxAmount !== undefined && (
+          <div className="mb-1 text-xs text-green-700">
+            Penawaran maksimal Anda saat ini: <b>{formatRupiah(auction.highestBidderMaxAmount)}</b>
+          </div>
+        )}
         <input
           type="number"
           placeholder={`Min. ${formatRupiah(minBid)}`}
@@ -274,7 +282,7 @@ function BidHistory({ bids }: { bids: Partial<BidResponse>[] }) {
               className="flex items-center justify-between rounded-xl bg-[#f6f4ef] px-3 py-2 text-xs"
             >
               <span className="font-medium text-gray-500">
-                User ID: ...{bid.bidderId?.slice(-6) ?? "Anonim"}
+                {maskBidderDisplay(bid.bidderDisplay) ?? `User ID: ...${bid.bidderId?.slice(-6) ?? "Anonim"}`}
               </span>
               <span className="font-semibold text-gray-900">
                 {bid.amount ? formatRupiah(bid.amount) : "-"}
@@ -617,9 +625,14 @@ export default function ListingDetailPage({ params }: PageProps) {
           text: "Penawaran Anda berhasil ditempatkan.",
         });
       } catch (err) {
+        let msg = err instanceof Error ? err.message : "Terjadi kesalahan.";
+        // Custom error message for same-max bid
+        if (msg.includes("penawar tertinggi") && msg.includes("maksimal")) {
+          msg = "Anda sudah menjadi penawar tertinggi. Untuk menaikkan tawaran, masukkan jumlah yang lebih besar dari batas maksimal Anda saat ini.";
+        }
         setBidMessage({
           type: "error",
-          text: err instanceof Error ? err.message : "Terjadi kesalahan.",
+          text: msg,
         });
       } finally {
         setIsSubmitting(false);
@@ -776,6 +789,28 @@ export default function ListingDetailPage({ params }: PageProps) {
 
           {/* ── Kolom Kanan: Bid Card ── */}
           <div className="space-y-4 lg:col-span-2">
+            {/* Penjelasan Proxy Bidding */}
+            <div className="rounded-2xl border border-blue-100 bg-blue-50 p-4 text-sm text-blue-900">
+              <b>Cara Kerja Penawaran Maksimal (Proxy Bidding)</b>
+              <ul className="mt-2 list-disc pl-5 space-y-1">
+                <li>Ketika Anda memasukkan penawaran, sistem akan menahan saldo Anda sebesar <b>penawaran maksimal</b> yang Anda masukkan.</li>
+                <li>Namun, Anda hanya akan membayar <b>harga akhir lelang</b> (harga tertinggi yang diperlukan untuk menang), bukan seluruh penawaran maksimal Anda.</li>
+                <li>Jika Anda menang dengan harga lebih rendah dari penawaran maksimal, sisa saldo yang ditahan akan dikembalikan ke dompet Anda secara otomatis.</li>
+                <li>Jika Anda kalah, seluruh saldo yang ditahan akan dikembalikan.</li>
+              </ul>
+              <div className="mt-2 text-xs text-blue-700">
+                Contoh: Jika Anda memasukkan penawaran maksimal Rp120.000, tetapi hanya perlu membayar Rp107.000 untuk menang, maka Rp13.000 akan dikembalikan ke dompet Anda setelah lelang selesai.
+              </div>
+            </div>
+            {/* Info Penawaran Pengguna (jika tersedia) */}
+            {auction && user && auction.highestBidderId === user.id && (
+              <div className="rounded-xl border border-green-100 bg-green-50 p-3 text-xs text-green-900">
+                <b>Anda adalah penawar tertinggi!</b><br />
+                Penawaran maksimal Anda: <b>{formatRupiah(auction.highestBidderMaxAmount ?? 0)}</b><br />
+                Harga saat ini: <b>{formatRupiah(auction.currentPrice)}</b><br />
+                Anda hanya akan membayar harga akhir, sisa saldo akan dikembalikan.
+              </div>
+            )}
             <BidCard
               listing={listing}
               auction={auction}
@@ -787,6 +822,7 @@ export default function ListingDetailPage({ params }: PageProps) {
               onBidAmountChange={setBidAmount}
               onSubmit={handlePlaceBid}
               onCountdownExpire={refreshAuctionState}
+              user={user}
             />
             <BidHistory bids={bidHistory} />
           </div>

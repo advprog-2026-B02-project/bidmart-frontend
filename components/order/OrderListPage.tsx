@@ -251,7 +251,6 @@ export default function OrderListPage({
         {loading && (
           <div className="space-y-3">
             {Array.from({ length: 5 }).map((_, i) => (
-              // eslint-disable-next-line react/no-array-index-key
               <CardSkeleton key={i} />
             ))}
           </div>
