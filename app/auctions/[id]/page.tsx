@@ -15,6 +15,7 @@ interface PageProps {
 }
 
 type BidMessage = { type: "success" | "error"; text: string } | null;
+type BidPagePayload = { content?: Partial<BidResponse>[]; totalElements?: number };
 
 function formatRupiah(amount: number): string {
   return new Intl.NumberFormat("id-ID", {
@@ -33,6 +34,36 @@ function formatDate(iso: string | null): string {
     hour: "2-digit",
     minute: "2-digit",
   }).format(new Date(iso));
+}
+
+function normalizeBidPage(data: unknown): { bids: Partial<BidResponse>[]; total: number } {
+  if (Array.isArray(data)) {
+    return { bids: data as Partial<BidResponse>[], total: data.length };
+  }
+
+  const page = data as BidPagePayload;
+  const bids = Array.isArray(page?.content) ? page.content : [];
+  return {
+    bids,
+    total: typeof page?.totalElements === "number" ? page.totalElements : bids.length,
+  };
+}
+
+function isOpenAuctionStatus(status: AuctionResponse["status"] | ListingDetail["status"]): boolean {
+  return status === "ACTIVE" || status === "EXTENDED";
+}
+
+function isClosedAuctionStatus(status: AuctionResponse["status"] | ListingDetail["status"]): boolean {
+  return status === "CLOSED" || status === "WON" || status === "UNSOLD";
+}
+
+function toListingStatus(
+  auctionStatus: AuctionResponse["status"],
+  fallback: ListingDetail["status"]
+): ListingDetail["status"] {
+  if (isClosedAuctionStatus(auctionStatus)) return "CLOSED";
+  if (isOpenAuctionStatus(auctionStatus)) return "ACTIVE";
+  return fallback;
 }
 
 function StatusBadge({ status }: { status: ListingDetail["status"] }) {
@@ -87,27 +118,38 @@ function DetailSkeleton() {
 function BidCard({
   listing,
   auction,
+  bidCount,
   bidAmount,
   bidMessage,
   isSubmitting,
+  now,
   onBidAmountChange,
   onSubmit,
+  onCountdownExpire,
 }: {
   listing: ListingDetail;
   auction: AuctionResponse | null;
+  bidCount: number;
   bidAmount: number;
   bidMessage: BidMessage;
   isSubmitting: boolean;
+  now: number;
   onBidAmountChange: (amount: number) => void;
   onSubmit: (event: React.FormEvent<HTMLFormElement>) => void;
+  onCountdownExpire: () => void;
 }) {
   const currentPrice = auction?.currentPrice ?? listing.currentPrice;
   const minBid = auction?.minimumNextBid ?? currentPrice + listing.minimumIncrement;
   const auctionStatus = auction?.status ?? listing.status;
+  const auctionEndTime = auction?.endTime ?? listing.auctionEndTime;
+  const auctionEndedByTime = auctionEndTime
+    ? new Date(auctionEndTime).getTime() <= now
+    : false;
+  const auctionOpen = isOpenAuctionStatus(auctionStatus) && !auctionEndedByTime;
+  const auctionClosed = isClosedAuctionStatus(auctionStatus) || Boolean(auction?.id && auctionEndedByTime);
   const canBid =
     Boolean(auction?.id) &&
-    listing.auctionOngoing &&
-    (auctionStatus === "ACTIVE" || auctionStatus === "EXTENDED");
+    auctionOpen;
 
   return (
     <div className="sticky top-6 rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
@@ -118,7 +160,7 @@ function BidCard({
           {formatRupiah(currentPrice)}
         </p>
         <p className="mt-1 text-xs text-white/60">
-          {listing.bidCount} penawaran masuk
+          {bidCount} penawaran masuk
         </p>
       </div>
 
@@ -143,28 +185,28 @@ function BidCard({
       </div>
 
       {/* Countdown */}
-      {listing.auctionOngoing && listing.auctionEndTime && (
+      {auctionOpen && auctionEndTime && (
         <div className="mb-4">
-          <AuctionCountdown auctionEndTime={listing.auctionEndTime} />
+          <AuctionCountdown auctionEndTime={auctionEndTime} onExpire={onCountdownExpire} />
         </div>
       )}
 
       {/* Lelang sudah tutup */}
-      {!listing.auctionOngoing && listing.status === "CLOSED" && (
+      {auctionClosed && (
         <div className="mb-4 rounded-2xl bg-gray-100 px-4 py-3 text-center">
           <p className="text-sm font-semibold text-gray-500">
-            🔒 Lelang telah berakhir
+            {auctionStatus === "UNSOLD" ? "🔒 Lelang berakhir tanpa pemenang" : "🔒 Lelang telah berakhir"}
           </p>
-          {listing.auctionEndTime && (
+          {auctionEndTime && (
             <p className="mt-0.5 text-xs text-gray-400">
-              {formatDate(listing.auctionEndTime)}
+              {formatDate(auctionEndTime)}
             </p>
           )}
         </div>
       )}
 
       {/* Belum dimulai (DRAFT/ACTIVE tapi belum ongoing) */}
-      {!listing.auctionOngoing && listing.status !== "CLOSED" && (
+      {!auction?.id && !listing.auctionOngoing && listing.status !== "CLOSED" && (
         <div className="mb-4 rounded-2xl bg-yellow-50 px-4 py-3 text-center">
           <p className="text-sm font-semibold text-yellow-700">
             ⏳ Lelang belum dimulai
@@ -186,7 +228,7 @@ function BidCard({
 
       <form onSubmit={onSubmit} className="space-y-2">
         <label className="block text-sm font-medium text-gray-700">
-          Jumlah Penawaran (Rp)
+          Batas Maksimum Penawaran (Rp)
         </label>
         <input
           type="number"
@@ -253,11 +295,18 @@ export default function ListingDetailPage({ params }: PageProps) {
   const [listing, setListing] = useState<ListingDetail | null>(null);
   const [auction, setAuction] = useState<AuctionResponse | null>(null);
   const [bidHistory, setBidHistory] = useState<Partial<BidResponse>[]>([]);
+  const [bidTotal, setBidTotal] = useState<number | null>(null);
   const [bidAmount, setBidAmount] = useState(0);
+  const [now, setNow] = useState(() => Date.now());
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [bidMessage, setBidMessage] = useState<BidMessage>(null);
+
+  useEffect(() => {
+    const intervalId = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(intervalId);
+  }, []);
 
   const refreshAuctionState = useCallback(async () => {
     const auctionRes = await fetch(`/api/bidding/auctions/listings/${id}`, {
@@ -267,33 +316,47 @@ export default function ListingDetailPage({ params }: PageProps) {
     if (!auctionRes.ok) {
       setAuction(null);
       setBidHistory([]);
+      setBidTotal(null);
       return;
     }
 
     const auctionData = (await auctionRes.json()) as AuctionResponse;
     setAuction(auctionData);
     setBidAmount(auctionData.minimumNextBid);
+    setListing((prev) =>
+      prev
+        ? {
+            ...prev,
+            status: toListingStatus(auctionData.status, prev.status),
+            currentPrice: auctionData.currentPrice,
+            auctionEndTime: auctionData.endTime,
+            auctionOngoing: isOpenAuctionStatus(auctionData.status),
+          }
+        : prev
+    );
 
     const bidRes = await fetch(`/api/bidding/auctions/${auctionData.id}/bids`, {
       cache: "no-store",
     });
 
     if (bidRes.ok) {
-      const bidData = await bidRes.json();
-      const bids = Array.isArray(bidData) ? bidData : bidData.content ?? [];
+      const bidData = normalizeBidPage(await bidRes.json());
+      const { bids, total } = bidData;
       setBidHistory(bids);
+      setBidTotal(total);
       setListing((prev) =>
         prev
           ? {
               ...prev,
               currentPrice: auctionData.currentPrice,
-              bidCount: bidData.totalElements ?? bids.length ?? prev.bidCount,
+              bidCount: total,
               auctionEndTime: auctionData.endTime,
             }
           : prev
       );
     } else {
       setBidHistory([]);
+      setBidTotal(null);
       setListing((prev) =>
         prev
           ? {
@@ -333,10 +396,22 @@ export default function ListingDetailPage({ params }: PageProps) {
           if (isMounted) {
             setAuction(auctionData);
             setBidAmount(auctionData.minimumNextBid);
+            setListing((prev) =>
+              prev
+                ? {
+                    ...prev,
+                    status: toListingStatus(auctionData.status, prev.status),
+                    currentPrice: auctionData.currentPrice,
+                    auctionEndTime: auctionData.endTime,
+                    auctionOngoing: isOpenAuctionStatus(auctionData.status),
+                  }
+                : prev
+            );
           }
           resolvedAuctionId = auctionData.id;
         } else if (isMounted) {
           setAuction(null);
+          setBidTotal(null);
         }
 
         if (resolvedAuctionId) {
@@ -344,15 +419,26 @@ export default function ListingDetailPage({ params }: PageProps) {
             cache: "no-store",
           });
           if (bidRes.ok) {
-            const bidData = await bidRes.json();
+            const { bids, total } = normalizeBidPage(await bidRes.json());
             if (isMounted) {
-              setBidHistory(Array.isArray(bidData) ? bidData : bidData.content ?? []);
+              setBidHistory(bids);
+              setBidTotal(total);
+              setListing((prev) =>
+                prev
+                  ? {
+                      ...prev,
+                      bidCount: total,
+                    }
+                  : prev
+              );
             }
           } else if (isMounted) {
             setBidHistory([]);
+            setBidTotal(null);
           }
         } else if (isMounted) {
           setBidHistory([]);
+          setBidTotal(null);
         }
       } catch (err) {
         if (isMounted) {
@@ -382,13 +468,14 @@ export default function ListingDetailPage({ params }: PageProps) {
     auctionId: auction?.id ?? "",
     onBidPlaced: (eventData) => {
       const incrementValue = listing?.minimumIncrement ?? 10000;
+      const nextMinimumBid = eventData.minimumNextBid ?? eventData.amount + incrementValue;
 
       setAuction((prev) =>
         prev
           ? {
               ...prev,
               currentPrice: eventData.amount,
-              minimumNextBid: eventData.amount + incrementValue,
+              minimumNextBid: nextMinimumBid,
               highestBidderId: eventData.bidderId,
               endTime: eventData.auctionEndTime ?? prev.endTime,
             }
@@ -402,11 +489,13 @@ export default function ListingDetailPage({ params }: PageProps) {
               currentPrice: eventData.amount,
               bidCount: eventData.bidCount ?? prev.bidCount + 1,
               auctionEndTime: eventData.auctionEndTime ?? prev.auctionEndTime,
+              auctionOngoing: true,
             }
           : prev
       );
 
-      setBidAmount(eventData.amount + incrementValue);
+      setBidTotal((prev) => eventData.bidCount ?? (prev === null ? 1 : prev + 1));
+      setBidAmount(nextMinimumBid);
       setBidHistory((prev) => {
         if (eventData.id && prev.some((bid) => bid.id === eventData.id)) {
           return prev;
@@ -423,6 +512,9 @@ export default function ListingDetailPage({ params }: PageProps) {
 
         return [eventData, ...prev];
       });
+    },
+    onAuctionEnded: () => {
+      void refreshAuctionState();
     },
   });
 
@@ -505,9 +597,11 @@ export default function ListingDetailPage({ params }: PageProps) {
                   currentPrice: placedBid.amount ?? prev.currentPrice,
                   bidCount: prev.bidCount + 1,
                   auctionEndTime: placedBid.auctionEndTime ?? prev.auctionEndTime,
+                  auctionOngoing: true,
                 }
               : prev
           );
+          setBidTotal((prev) => (prev === null ? 1 : prev + 1));
           setBidAmount(nextBid);
           setBidHistory((prev) =>
             placedBid.id
@@ -586,10 +680,18 @@ export default function ListingDetailPage({ params }: PageProps) {
     );
   }
 
-  const displayStatus =
-    listing.status === "ACTIVE" && !listing.auctionOngoing
+  const auctionEndTime = auction?.endTime ?? listing.auctionEndTime;
+  const auctionEndedByTime = auctionEndTime
+    ? new Date(auctionEndTime).getTime() <= now
+    : false;
+  const displayStatus: ListingDetail["status"] = auction
+    ? isClosedAuctionStatus(auction.status) || auctionEndedByTime
       ? "CLOSED"
-      : listing.status;
+      : "ACTIVE"
+    : listing.status === "ACTIVE" && !listing.auctionOngoing
+    ? "CLOSED"
+    : listing.status;
+  const displayedBidCount = bidTotal ?? listing.bidCount;
 
   return (
     <main className="min-h-screen bg-[#f6f4ef]">
@@ -663,7 +765,7 @@ export default function ListingDetailPage({ params }: PageProps) {
                 Informasi Lelang
               </h2>
               <div className="divide-y divide-gray-50">
-                <InfoRow label="Total Penawaran" value={`${listing.bidCount} bid`} />
+                <InfoRow label="Total Penawaran" value={`${displayedBidCount} bid`} />
                 <InfoRow label="Harga Awal" value={formatRupiah(listing.startingPrice)} />
                 <InfoRow label="Kelipatan Bid" value={formatRupiah(listing.minimumIncrement)} />
                 <InfoRow label="Waktu Mulai" value={formatDate(listing.activatedAt)} />
@@ -677,11 +779,14 @@ export default function ListingDetailPage({ params }: PageProps) {
             <BidCard
               listing={listing}
               auction={auction}
+              bidCount={displayedBidCount}
               bidAmount={bidAmount}
               bidMessage={bidMessage}
               isSubmitting={isSubmitting}
+              now={now}
               onBidAmountChange={setBidAmount}
               onSubmit={handlePlaceBid}
+              onCountdownExpire={refreshAuctionState}
             />
             <BidHistory bids={bidHistory} />
           </div>

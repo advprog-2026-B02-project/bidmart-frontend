@@ -1,8 +1,9 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 interface Props {
   auctionEndTime: string;
+  onExpire?: () => void;
 }
 
 interface TimeLeft {
@@ -45,14 +46,25 @@ function TimeUnit({ value, label }: { value: number; label: string }) {
   );
 }
 
-export default function AuctionCountdown({ auctionEndTime }: Props) {
+export default function AuctionCountdown({ auctionEndTime, onExpire }: Props) {
   const [timeLeft, setTimeLeft] = useState<TimeLeft>(() =>
     calculate(auctionEndTime)
   );
+  const expiredNotifiedRef = useRef(false);
 
   useEffect(() => {
+    const initial = calculate(auctionEndTime);
+    setTimeLeft(initial);
 
-    if (calculate(auctionEndTime).expired) return;
+    if (initial.expired) {
+      if (!expiredNotifiedRef.current) {
+        expiredNotifiedRef.current = true;
+        onExpire?.();
+      }
+      return;
+    }
+
+    expiredNotifiedRef.current = false;
 
     let cancelled = false;
 
@@ -62,6 +74,10 @@ export default function AuctionCountdown({ auctionEndTime }: Props) {
         setTimeLeft(next);
         if (next.expired) {
           clearInterval(intervalId);
+          if (!expiredNotifiedRef.current) {
+            expiredNotifiedRef.current = true;
+            onExpire?.();
+          }
         }
       }
     }
@@ -72,7 +88,7 @@ export default function AuctionCountdown({ auctionEndTime }: Props) {
       cancelled = true;
       clearInterval(intervalId);
     };
-  }, [auctionEndTime]);
+  }, [auctionEndTime, onExpire]);
 
   if (timeLeft.expired) {
     return (
