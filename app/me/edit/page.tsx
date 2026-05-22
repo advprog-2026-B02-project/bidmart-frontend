@@ -12,6 +12,10 @@ export default function EditProfilePage() {
 
     const [displayName, setDisplayName] = useState("");
     const [avatarUrl, setAvatarUrl] = useState("");
+    const [shippingStreet, setShippingStreet] = useState("");
+    const [shippingCity, setShippingCity] = useState("");
+    const [shippingProvince, setShippingProvince] = useState("");
+    const [shippingPostalCode, setShippingPostalCode] = useState("");
     const [loading, setLoading] = useState(false);
     const [initLoading, setInitLoading] = useState(true);
     const [msg, setMsg] = useState<string | null>(null);
@@ -23,6 +27,10 @@ export default function EditProfilePage() {
                 const data = await me();
                 setDisplayName(data?.displayName || "");
                 setAvatarUrl(data?.avatarUrl || "");
+                setShippingStreet(data?.shippingStreet || "");
+                setShippingCity(data?.shippingCity || "");
+                setShippingProvince(data?.shippingProvince || "");
+                setShippingPostalCode(data?.shippingPostalCode || "");
             } catch (err: unknown) {
                 const message =
                     err instanceof Error ? err.message : "Gagal memuat profil.";
@@ -39,10 +47,21 @@ export default function EditProfilePage() {
         setLoading(true);
 
         try {
-            const updated = await updateProfile(displayName, avatarUrl);
+            const updated = await updateProfile({
+                displayName,
+                avatarUrl,
+                shippingStreet,
+                shippingCity,
+                shippingProvince,
+                shippingPostalCode,
+            });
             updateUser({
                 displayName: updated?.displayName ?? displayName,
                 avatarUrl: updated?.avatarUrl ?? avatarUrl,
+                shippingStreet: updated?.shippingStreet ?? shippingStreet,
+                shippingCity: updated?.shippingCity ?? shippingCity,
+                shippingProvince: updated?.shippingProvince ?? shippingProvince,
+                shippingPostalCode: updated?.shippingPostalCode ?? shippingPostalCode,
             });
             await checkSession();
             setIsSuccess(true);
@@ -64,7 +83,9 @@ export default function EditProfilePage() {
                     <h1 className="mt-2 text-3xl font-black tracking-tight text-bidnavy sm:text-4xl">
                         Edit Profil
                     </h1>
-                    <p className="mt-2 text-sm text-gray-500">Perbarui nama dan foto profil Anda.</p>
+                    <p className="mt-2 text-sm text-gray-500">
+                        Perbarui nama, foto profil, dan alamat pengiriman untuk order.
+                    </p>
                 </section>
 
                 <section className="mt-8 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
@@ -101,6 +122,72 @@ export default function EditProfilePage() {
                                 <p className="mt-2 text-xs text-gray-500">
                                     Kosongkan jika tidak ingin menggunakan foto profil.
                                 </p>
+                            </div>
+
+                            <div className="rounded-xl border border-gray-200 bg-bidcream/50 p-4">
+                                <h2 className="text-sm font-black text-bidnavy">Alamat Pengiriman</h2>
+                                <p className="mt-1 text-xs font-medium text-gray-500">
+                                    Alamat ini akan dipakai saat membuat order.
+                                </p>
+
+                                <div className="mt-4 space-y-4">
+                                    <div>
+                                        <label className="mb-2 block text-sm font-bold text-bidnavy">
+                                            Jalan / Detail Alamat
+                                        </label>
+                                        <input
+                                            className={inputCls}
+                                            type="text"
+                                            placeholder="Contoh: Jl. Margonda Raya No. 1"
+                                            value={shippingStreet}
+                                            onChange={(e) => setShippingStreet(e.target.value)}
+                                            maxLength={255}
+                                            disabled={loading}
+                                        />
+                                    </div>
+
+                                    <div className="grid gap-4 sm:grid-cols-2">
+                                        <div>
+                                            <label className="mb-2 block text-sm font-bold text-bidnavy">Kota</label>
+                                            <input
+                                                className={inputCls}
+                                                type="text"
+                                                placeholder="Contoh: Depok"
+                                                value={shippingCity}
+                                                onChange={(e) => setShippingCity(e.target.value)}
+                                                maxLength={100}
+                                                disabled={loading}
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className="mb-2 block text-sm font-bold text-bidnavy">Provinsi</label>
+                                            <input
+                                                className={inputCls}
+                                                type="text"
+                                                placeholder="Contoh: Jawa Barat"
+                                                value={shippingProvince}
+                                                onChange={(e) => setShippingProvince(e.target.value)}
+                                                maxLength={100}
+                                                disabled={loading}
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label className="mb-2 block text-sm font-bold text-bidnavy">Kode Pos</label>
+                                        <input
+                                            className={inputCls}
+                                            type="text"
+                                            inputMode="numeric"
+                                            placeholder="Contoh: 16424"
+                                            value={shippingPostalCode}
+                                            onChange={(e) => setShippingPostalCode(e.target.value)}
+                                            maxLength={20}
+                                            disabled={loading}
+                                        />
+                                    </div>
+                                </div>
                             </div>
 
                             <div className="flex flex-col gap-3 pt-2 sm:flex-row">

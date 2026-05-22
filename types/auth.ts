@@ -6,6 +6,10 @@ export interface User {
     email: string;
     displayName: string;
     avatarUrl: string | null;
+    shippingStreet?: string;
+    shippingCity?: string;
+    shippingProvince?: string;
+    shippingPostalCode?: string;
     roles: Role[];
     emailVerified: boolean;
     status: UserStatus;

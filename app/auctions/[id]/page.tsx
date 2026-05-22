@@ -302,16 +302,19 @@ function BidHistory({ bids }: { bids: Partial<BidResponse>[] }) {
           Belum ada aktivitas penawaran pada barang ini.
         </p>
       ) : (
-        <div className="max-h-56 space-y-2 overflow-y-auto pr-1">
+        <div
+          className="max-h-72 min-h-0 space-y-2 overflow-y-scroll overscroll-contain pr-2 touch-pan-y"
+          style={{ WebkitOverflowScrolling: "touch" }}
+        >
           {bids.map((bid, index) => (
             <div
               key={bid.id ?? index}
-              className="flex items-center justify-between rounded-xl bg-[#f6f4ef] px-3 py-2 text-xs"
+              className="flex items-center justify-between gap-3 rounded-xl bg-[#f6f4ef] px-3 py-2 text-xs"
             >
-              <span className="font-medium text-gray-500">
+              <span className="min-w-0 truncate font-medium text-gray-500">
                 {maskBidderDisplay(bid.bidderDisplay) ?? `User ID: ...${bid.bidderId?.slice(-6) ?? "Anonim"}`}
               </span>
-              <span className="font-semibold text-gray-900">
+              <span className="shrink-0 font-semibold text-gray-900">
                 {bid.amount ? formatRupiah(bid.amount) : "-"}
               </span>
             </div>

@@ -5,7 +5,6 @@ export interface UserBasicDTO {
 
 export type OrderStatus =
   | "CREATED"
-  | "PACKAGED"
   | "SHIPPED"
   | "COMPLETED"
   | "DISPUTED"
@@ -60,7 +59,7 @@ export interface SellerDTO {
 export interface ListingDTO {
   id: string;
   title: string;
-  images: string[]; // array URL string, bisa empty
+  images: string[];
 }
 
 export interface ShippingDTO {
