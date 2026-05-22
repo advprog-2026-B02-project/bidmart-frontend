@@ -46,17 +46,16 @@ function TimeUnit({ value, label }: { value: number; label: string }) {
   );
 }
 
-export default function AuctionCountdown({ auctionEndTime, onExpire }: Props) {
+function AuctionCountdownContent({ auctionEndTime, onExpire }: Props) {
   const [timeLeft, setTimeLeft] = useState<TimeLeft>(() =>
     calculate(auctionEndTime)
   );
   const expiredNotifiedRef = useRef(false);
 
   useEffect(() => {
-    const initial = calculate(auctionEndTime);
-    setTimeLeft(initial);
+    const current = calculate(auctionEndTime);
 
-    if (initial.expired) {
+    if (current.expired) {
       if (!expiredNotifiedRef.current) {
         expiredNotifiedRef.current = true;
         onExpire?.();
@@ -114,4 +113,8 @@ export default function AuctionCountdown({ auctionEndTime, onExpire }: Props) {
       </div>
     </div>
   );
+}
+
+export default function AuctionCountdown(props: Props) {
+  return <AuctionCountdownContent key={props.auctionEndTime} {...props} />;
 }
