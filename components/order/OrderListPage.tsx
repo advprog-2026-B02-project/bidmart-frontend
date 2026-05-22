@@ -14,6 +14,7 @@ const STATUS_OPTIONS: { value: OrderStatus | ""; label: string }[] = [
   { value: "",          label: "Semua Status" },
   { value: "CREATED",   label: "📋 Dibuat" },
   { value: "SHIPPED",   label: "🚚 Dikirim" },
+  { value: "PACKAGED", label: "📦 Dikemas" },
   { value: "COMPLETED", label: "✅ Selesai" },
   { value: "DISPUTED",  label: "⚠️ Sengketa" },
   { value: "RESOLVED",  label: "🔒 Diselesaikan" },

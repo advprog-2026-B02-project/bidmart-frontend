@@ -10,7 +10,11 @@ export interface BidResponse {
     status: BidStatus;
     holdId: string | null;
     previousHighBid: number;
-    newHighBid: boolean;
+    currentHighestBidderId?: string | null;
+    currentPrice?: number;
+    isNewHighBid?: boolean;
+    newHighBid?: boolean;
+    outcomeMessage?: string | null;
     auctionEndTime: string;
     createdAt: string;
 }

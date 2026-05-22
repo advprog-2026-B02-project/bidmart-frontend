@@ -185,7 +185,7 @@ function BidCard({
     <div className="sticky top-6 rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
       {/* Harga terkini */}
       <div className="mb-4 rounded-2xl bg-[#002447] px-5 py-4 text-white">
-        <p className="text-xs font-medium text-white/70">Harga Terkini</p>
+        <p className="text-xs font-medium text-white/70">Harga Bid Saat Ini</p>
         <p className="mt-1 text-2xl font-bold tracking-tight">
           {formatRupiah(currentPrice)}
         </p>
@@ -291,13 +291,27 @@ function BidCard({
   );
 }
 
-function BidHistory({ bids }: { bids: Partial<BidResponse>[] }) {
+function BidHistory({
+  bids,
+  loading,
+  currentHighestBidderId,
+}: {
+  bids: Partial<BidResponse>[];
+  loading: boolean;
+  currentHighestBidderId?: string | null;
+}) {
   return (
     <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
       <h2 className="mb-3 text-sm font-semibold text-[#002447]">
         Aktivitas Penawaran Terakhir
       </h2>
-      {bids.length === 0 ? (
+      {loading ? (
+        <div className="space-y-2 py-1">
+          {[1, 2, 3].map((item) => (
+            <div key={item} className="h-10 animate-pulse rounded-xl bg-[#f6f4ef]" />
+          ))}
+        </div>
+      ) : bids.length === 0 ? (
         <p className="py-6 text-center text-xs text-gray-400">
           Belum ada aktivitas penawaran pada barang ini.
         </p>
@@ -306,19 +320,37 @@ function BidHistory({ bids }: { bids: Partial<BidResponse>[] }) {
           className="max-h-72 min-h-0 space-y-2 overflow-y-scroll overscroll-contain pr-2 touch-pan-y"
           style={{ WebkitOverflowScrolling: "touch" }}
         >
-          {bids.map((bid, index) => (
-            <div
-              key={bid.id ?? index}
-              className="flex items-center justify-between gap-3 rounded-xl bg-[#f6f4ef] px-3 py-2 text-xs"
-            >
-              <span className="min-w-0 truncate font-medium text-gray-500">
-                {maskBidderDisplay(bid.bidderDisplay) ?? `User ID: ...${bid.bidderId?.slice(-6) ?? "Anonim"}`}
-              </span>
-              <span className="shrink-0 font-semibold text-gray-900">
-                {bid.amount ? formatRupiah(bid.amount) : "-"}
-              </span>
-            </div>
-          ))}
+          {bids.map((bid, index) => {
+            const isCurrentHighestBidder = Boolean(
+              currentHighestBidderId && bid.bidderId === currentHighestBidderId
+            );
+            const statusLabel = isCurrentHighestBidder
+              ? "Tertinggi"
+              : bid.status === "OUTBID" || Boolean(currentHighestBidderId)
+              ? "Tersalip"
+              : null;
+
+            return (
+              <div
+                key={bid.id ?? index}
+                className="flex items-center justify-between gap-3 rounded-xl bg-[#f6f4ef] px-3 py-2 text-xs"
+              >
+                <div className="min-w-0">
+                  <p className="truncate font-medium text-gray-500">
+                    {maskBidderDisplay(bid.bidderDisplay) ?? `User ID: ...${bid.bidderId?.slice(-6) ?? "Anonim"}`}
+                  </p>
+                  {statusLabel && (
+                    <p className={isCurrentHighestBidder ? "text-green-700" : "text-gray-400"}>
+                      {statusLabel}
+                    </p>
+                  )}
+                </div>
+                <span className="shrink-0 font-semibold text-gray-900">
+                  {bid.amount ? formatRupiah(bid.amount) : "-"}
+                </span>
+              </div>
+            );
+          })}
         </div>
       )}
     </div>
@@ -334,6 +366,7 @@ export default function ListingDetailPage({ params }: PageProps) {
   const [auction, setAuction] = useState<AuctionResponse | null>(null);
   const [bidHistory, setBidHistory] = useState<Partial<BidResponse>[]>([]);
   const [bidTotal, setBidTotal] = useState<number | null>(null);
+  const [bidHistoryLoading, setBidHistoryLoading] = useState(true);
   const [bidAmount, setBidAmount] = useState(0);
   const [now, setNow] = useState(() => Date.now());
   const [loading, setLoading] = useState(true);
@@ -355,6 +388,7 @@ export default function ListingDetailPage({ params }: PageProps) {
       setAuction(null);
       setBidHistory([]);
       setBidTotal(null);
+      setBidHistoryLoading(false);
       return;
     }
 
@@ -373,6 +407,7 @@ export default function ListingDetailPage({ params }: PageProps) {
         : prev
     );
 
+    setBidHistoryLoading(true);
     const bidRes = await fetch(`/api/bidding/auctions/${auctionData.id}/bids`, {
       cache: "no-store",
     });
@@ -382,6 +417,7 @@ export default function ListingDetailPage({ params }: PageProps) {
       const { bids, total } = bidData;
       setBidHistory(bids);
       setBidTotal(total);
+      setBidHistoryLoading(false);
       setListing((prev) =>
         prev
           ? {
@@ -395,6 +431,7 @@ export default function ListingDetailPage({ params }: PageProps) {
     } else {
       setBidHistory([]);
       setBidTotal(null);
+      setBidHistoryLoading(false);
       setListing((prev) =>
         prev
           ? {
@@ -414,6 +451,7 @@ export default function ListingDetailPage({ params }: PageProps) {
       if (isMounted) {
         setLoading(true);
         setError(null);
+        setBidHistoryLoading(true);
       }
 
       try {
@@ -450,6 +488,7 @@ export default function ListingDetailPage({ params }: PageProps) {
         } else if (isMounted) {
           setAuction(null);
           setBidTotal(null);
+          setBidHistoryLoading(false);
         }
 
         if (resolvedAuctionId) {
@@ -461,6 +500,7 @@ export default function ListingDetailPage({ params }: PageProps) {
             if (isMounted) {
               setBidHistory(bids);
               setBidTotal(total);
+              setBidHistoryLoading(false);
               setListing((prev) =>
                 prev
                   ? {
@@ -473,10 +513,12 @@ export default function ListingDetailPage({ params }: PageProps) {
           } else if (isMounted) {
             setBidHistory([]);
             setBidTotal(null);
+            setBidHistoryLoading(false);
           }
         } else if (isMounted) {
           setBidHistory([]);
           setBidTotal(null);
+          setBidHistoryLoading(false);
         }
       } catch (err) {
         if (isMounted) {
@@ -617,15 +659,17 @@ export default function ListingDetailPage({ params }: PageProps) {
         }
 
         const placedBid = normalizeBidTimestamps(data as Partial<BidResponse>);
-        if (placedBid.amount !== undefined) {
-          const nextBid = placedBid.amount + listing.minimumIncrement;
+        const placedCurrentPrice = placedBid.currentPrice ?? placedBid.amount;
+
+        if (placedCurrentPrice !== undefined) {
+          const nextBid = placedCurrentPrice + listing.minimumIncrement;
           setAuction((prev) =>
             prev
               ? {
                   ...prev,
-                  currentPrice: placedBid.amount ?? prev.currentPrice,
+                  currentPrice: placedCurrentPrice ?? prev.currentPrice,
                   minimumNextBid: nextBid,
-                  highestBidderId: placedBid.bidderId ?? prev.highestBidderId,
+                  highestBidderId: placedBid.currentHighestBidderId ?? prev.highestBidderId,
                   endTime: placedBid.auctionEndTime ?? prev.endTime,
                 }
               : prev
@@ -634,7 +678,7 @@ export default function ListingDetailPage({ params }: PageProps) {
             prev
               ? {
                   ...prev,
-                  currentPrice: placedBid.amount ?? prev.currentPrice,
+                  currentPrice: placedCurrentPrice ?? prev.currentPrice,
                   bidCount: prev.bidCount + 1,
                   auctionEndTime: placedBid.auctionEndTime ?? prev.auctionEndTime,
                   auctionOngoing: true,
@@ -652,9 +696,16 @@ export default function ListingDetailPage({ params }: PageProps) {
 
         await refreshAuctionState();
 
+        const userIsHighestBidder = placedBid.currentHighestBidderId === user.id;
+        const outcomeMessage = placedBid.outcomeMessage ?? (
+          userIsHighestBidder
+            ? "Penawaran Anda berhasil ditempatkan dan Anda menjadi penawar tertinggi."
+            : "Penawaran Anda berhasil ditempatkan, tetapi Anda belum menjadi penawar tertinggi."
+        );
+
         setBidMessage({
-          type: "success",
-          text: "Penawaran Anda berhasil ditempatkan.",
+          type: userIsHighestBidder ? "success" : "error",
+          text: outcomeMessage,
         });
       } catch (err) {
         let msg = err instanceof Error ? err.message : "Terjadi kesalahan.";
@@ -854,7 +905,11 @@ export default function ListingDetailPage({ params }: PageProps) {
               onCountdownExpire={refreshAuctionState}
               user={user}
             />
-            <BidHistory bids={bidHistory} />
+            <BidHistory
+              bids={bidHistory}
+              loading={bidHistoryLoading}
+              currentHighestBidderId={auction?.highestBidderId ?? null}
+            />
           </div>
         </div>
       </div>

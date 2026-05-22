@@ -3,6 +3,21 @@
 import {useEffect, useState} from "react";
 import {useRouter} from "next/navigation";
 import {logout, me} from "@/lib/api";
+import {getWallet, type WalletResponse} from "@/lib/wallet.api";
+
+const currency = new Intl.NumberFormat("id-ID", {
+    style: "currency",
+    currency: "IDR",
+    maximumFractionDigits: 0,
+});
+
+function formatMoney(value: number) {
+    return currency.format(value || 0);
+}
+
+function getErrorMessage(error: unknown, fallback: string) {
+    return error instanceof Error ? error.message : fallback;
+}
 
 interface UserProfile {
     email: string;
@@ -20,6 +35,9 @@ interface UserProfile {
 
 export default function MePage() {
     const [user, setUser] = useState<UserProfile | null>(null);
+    const [wallet, setWallet] = useState<WalletResponse | null>(null);
+    const [walletLoading, setWalletLoading] = useState(true);
+    const [walletError, setWalletError] = useState<string | null>(null);
     const [msg, setMsg] = useState<string>("Memuat sesi...");
     const router = useRouter();
 
@@ -41,10 +59,19 @@ export default function MePage() {
                     status: data?.status,
                 });
                 setMsg("");
+
+                try {
+                    const walletData = await getWallet();
+                    setWallet(walletData);
+                    setWalletError(null);
+                } catch (walletFetchError: unknown) {
+                    setWallet(null);
+                    setWalletError(getErrorMessage(walletFetchError, "Gagal memuat wallet."));
+                }
             } catch (err: unknown) {
-                const message =
-                    err instanceof Error ? err.message : "Belum login / sesi habis.";
-                setMsg(message);
+                setMsg(getErrorMessage(err, "Belum login / sesi habis."));
+            } finally {
+                setWalletLoading(false);
             }
         })();
     }, []);
@@ -146,8 +173,16 @@ export default function MePage() {
                         </section>
 
                         <section className="grid gap-4 md:grid-cols-4">
-                            <ProfileStatCard label="Saldo Tersedia" value="-" description="Saldo siap dipakai" />
-                            <ProfileStatCard label="Saldo Tertahan" value="-" description="Saldo tertahan untuk bid/order" />
+                            <ProfileStatCard
+                                label="Saldo Tersedia"
+                                value={walletLoading ? "Memuat..." : wallet ? formatMoney(wallet.availableBalance) : "-"}
+                                description={walletError ?? "Saldo siap dipakai"}
+                            />
+                            <ProfileStatCard
+                                label="Saldo Tertahan"
+                                value={walletLoading ? "Memuat..." : wallet ? formatMoney(wallet.heldBalance) : "-"}
+                                description={walletError ?? "Saldo tertahan untuk bid/order"}
+                            />
                             <ProfileStatCard label="Katalog Aktif" value="-" description="Listing yang sedang tampil" />
                             <ProfileStatCard label="Order Saya" value="0" description="Sebagai buyer" />
                         </section>

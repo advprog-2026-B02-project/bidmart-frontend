@@ -9,6 +9,7 @@ export type OrderStatus =
   | "SHIPPED"
   | "COMPLETED"
   | "DISPUTED"
+  | "PACKAGED"
   | "RESOLVED";
 
 export interface OrderSummary {

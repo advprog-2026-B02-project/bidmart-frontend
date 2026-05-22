@@ -12,7 +12,10 @@ export interface BidResponseDTO {
     amount: number;
     status: string;
     previousHighBid?: number;
+    currentHighestBidderId?: string | null;
+    currentPrice?: number;
     isNewHighBid: boolean;
+    outcomeMessage?: string | null;
     createdAt: string;
 }
 
@@ -23,6 +26,7 @@ export interface AuctionResponseDTO {
     currentPrice: number;
     minimumNextBid: number;
     highestBidderId?: string;
+    highestBidderMaxAmount?: number;
     startTime: string;
     endTime: string;
     extensionCount: number;
