@@ -1,9 +1,10 @@
 "use client";
 
-import {useEffect, useState} from "react";
-import {useRouter} from "next/navigation";
-import {logout, me} from "@/lib/api";
-import {getWallet, type WalletResponse} from "@/lib/wallet.api";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { logout, me } from "@/lib/api";
+import { getWallet, type WalletResponse } from "@/lib/wallet.api";
+import { fetchSellerListings } from "@/lib/seller.api";
 
 const currency = new Intl.NumberFormat("id-ID", {
     style: "currency",
@@ -38,6 +39,10 @@ export default function MePage() {
     const [wallet, setWallet] = useState<WalletResponse | null>(null);
     const [walletLoading, setWalletLoading] = useState(true);
     const [walletError, setWalletError] = useState<string | null>(null);
+
+    const [activeCatalogCount, setActiveCatalogCount] = useState<number | null>(null);
+    const [catalogLoading, setCatalogLoading] = useState(false);
+
     const [msg, setMsg] = useState<string>("Memuat sesi...");
     const router = useRouter();
 
@@ -67,6 +72,20 @@ export default function MePage() {
                 } catch (walletFetchError: unknown) {
                     setWallet(null);
                     setWalletError(getErrorMessage(walletFetchError, "Gagal memuat wallet."));
+                }
+
+                if (data?.roles?.includes("SELLER")) {
+                    setCatalogLoading(true);
+                    try {
+                        const listings = await fetchSellerListings();
+                        const activeCount = listings.filter((item) => item.status === "ACTIVE").length;
+                        setActiveCatalogCount(activeCount);
+                    } catch (catalogErr) {
+                        console.error("Gagal memuat listing seller", catalogErr);
+                        setActiveCatalogCount(null);
+                    } finally {
+                        setCatalogLoading(false);
+                    }
                 }
             } catch (err: unknown) {
                 setMsg(getErrorMessage(err, "Belum login / sesi habis."));
@@ -172,7 +191,7 @@ export default function MePage() {
                             </div>
                         </section>
 
-                        <section className="grid gap-4 md:grid-cols-4">
+                        <section className={`grid gap-4 ${canOpenSeller ? 'md:grid-cols-4' : 'md:grid-cols-3'}`}>
                             <ProfileStatCard
                                 label="Saldo Tersedia"
                                 value={walletLoading ? "Memuat..." : wallet ? formatMoney(wallet.availableBalance) : "-"}
@@ -183,7 +202,22 @@ export default function MePage() {
                                 value={walletLoading ? "Memuat..." : wallet ? formatMoney(wallet.heldBalance) : "-"}
                                 description={walletError ?? "Saldo tertahan untuk bid/order"}
                             />
-                            <ProfileStatCard label="Katalog Aktif" value="-" description="Listing yang sedang tampil" />
+
+                            {/* card katalog aktif hanya tampil jika dia seller */}
+                            {canOpenSeller && (
+                                <ProfileStatCard
+                                    label="Katalog Aktif"
+                                    value={
+                                        catalogLoading
+                                            ? "Memuat..."
+                                            : activeCatalogCount !== null
+                                                ? activeCatalogCount.toString()
+                                                : "-"
+                                    }
+                                    description="Listing yang sedang tampil"
+                                />
+                            )}
+
                             <ProfileStatCard label="Order Saya" value="0" description="Sebagai buyer" />
                         </section>
 
@@ -235,7 +269,7 @@ export default function MePage() {
     );
 }
 
-function ProfileStat({label, value}: { label: string; value: string }) {
+function ProfileStat({ label, value }: { label: string; value: string }) {
     return (
         <div className="rounded-lg bg-bidcream px-4 py-3">
             <p className="text-xs font-black uppercase tracking-[0.15em] text-gray-400">{label}</p>
@@ -244,7 +278,7 @@ function ProfileStat({label, value}: { label: string; value: string }) {
     );
 }
 
-function ProfileStatCard({label, value, description}: { label: string; value: string; description: string }) {
+function ProfileStatCard({ label, value, description }: { label: string; value: string; description: string }) {
     return (
         <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
             <p className="text-xs font-black uppercase tracking-[0.25em] text-gray-400">{label}</p>
@@ -254,7 +288,7 @@ function ProfileStatCard({label, value, description}: { label: string; value: st
     );
 }
 
-function ActionButton({label, onClick}: { label: string; onClick: () => void }) {
+function ActionButton({ label, onClick }: { label: string; onClick: () => void }) {
     return (
         <button
             onClick={onClick}
