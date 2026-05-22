@@ -35,6 +35,7 @@ const STATUS_CONFIG: Record<
   { label: string; className: string; icon: string }
 > = {
   CREATED:   { label: "Dibuat",        className: "bg-blue-100 text-blue-700 border-blue-200",      icon: "📋" },
+  PACKAGED:  { label: "Dikemas",       className: "bg-orange-100 text-orange-700 border-orange-200", icon: "📦" },
   SHIPPED:   { label: "Dikirim",       className: "bg-indigo-100 text-indigo-700 border-indigo-200", icon: "🚚" },
   COMPLETED: { label: "Selesai",       className: "bg-green-100 text-green-700 border-green-200",    icon: "✅" },
   DISPUTED:  { label: "Sengketa",      className: "bg-red-100 text-red-700 border-red-200",          icon: "⚠️" },

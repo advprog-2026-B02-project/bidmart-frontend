@@ -5,6 +5,7 @@ export interface UserBasicDTO {
 
 export type OrderStatus =
   | "CREATED"
+  | "PACKAGED"
   | "SHIPPED"
   | "COMPLETED"
   | "DISPUTED"
