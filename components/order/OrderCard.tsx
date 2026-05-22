@@ -37,7 +37,6 @@ const STATUS_CONFIG: Record<
   CREATED:   { label: "Dibuat",        className: "bg-blue-100 text-blue-700 border-blue-200",      icon: "📋" },
   PACKAGED:  { label: "Dikemas",       className: "bg-orange-100 text-orange-700 border-orange-200", icon: "📦" },
   SHIPPED:   { label: "Dikirim",       className: "bg-indigo-100 text-indigo-700 border-indigo-200", icon: "🚚" },
-  PACKAGED: { label: "Dikemas",       className: "bg-amber-100 text-amber-700 border-amber-200",    icon: "📦" },
   COMPLETED: { label: "Selesai",       className: "bg-green-100 text-green-700 border-green-200",    icon: "✅" },
   DISPUTED:  { label: "Sengketa",      className: "bg-red-100 text-red-700 border-red-200",          icon: "⚠️" },
   RESOLVED:  { label: "Diselesaikan",  className: "bg-gray-100 text-gray-600 border-gray-200",       icon: "🔒" },

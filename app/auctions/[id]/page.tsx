@@ -321,10 +321,16 @@ function BidHistory({
           style={{ WebkitOverflowScrolling: "touch" }}
         >
           {bids.map((bid, index) => {
-            const isCurrentHighestBidder = Boolean(
+            // cek apakah bid ini milik penawar tertinggi saat ini
+            const isHighestBidder = Boolean(
               currentHighestBidderId && bid.bidderId === currentHighestBidderId
             );
-            const statusLabel = isCurrentHighestBidder
+
+            // cek apakah ini adalah bid TERBARU/TERATAS dari penawar tersebut
+            const isLatestHighest = isHighestBidder && 
+              bids.findIndex(b => b.bidderId === currentHighestBidderId) === index;
+
+            const statusLabel = isLatestHighest
               ? "Tertinggi"
               : bid.status === "OUTBID" || Boolean(currentHighestBidderId)
               ? "Tersalip"
@@ -340,7 +346,7 @@ function BidHistory({
                     {maskBidderDisplay(bid.bidderDisplay) ?? `User ID: ...${bid.bidderId?.slice(-6) ?? "Anonim"}`}
                   </p>
                   {statusLabel && (
-                    <p className={isCurrentHighestBidder ? "text-green-700" : "text-gray-400"}>
+                    <p className={isLatestHighest ? "text-green-700" : "text-gray-400"}>
                       {statusLabel}
                     </p>
                   )}
